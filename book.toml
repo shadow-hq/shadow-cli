@@ -1,0 +1,27 @@
+[book]
+authors = ["Shadow CLI Core Contributors"]
+language = "en"
+multilingual = false
+src = "book"
+title = "Shadow CLI Book"
+description = "A book on all things Shadow CLI"
+
+[output.html]
+theme = "book/theme"
+git-repository-url = "https://github.com/shadow-hq/shadow-cli"
+default-theme = "ayu"
+no-section-label = true
+
+[output.html.fold]
+enable = true
+level = 1
+
+[build]
+build-dir = "target/book"
+
+[preprocessor.template]
+before = ["links"]
+
+[preprocessor.index]
+
+[preprocessor.links]

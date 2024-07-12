@@ -1,0 +1,29 @@
+[package]
+name = "shadow-cli"
+description.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+keywords.workspace = true
+exclude.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+shadow-tracing.workspace = true
+
+eyre.workspace = true
+tokio.workspace = true
+clap.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+envy.workspace = true
+
+[[bin]]
+name = "shadow"
+path = "src/main.rs"
