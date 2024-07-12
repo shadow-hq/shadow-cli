@@ -2,12 +2,11 @@
 //! shadow contract directory, https://logs.xyz .
 
 pub(crate) mod log_args;
-pub(crate) mod subcommands;
 
 use clap::{Parser, Subcommand};
 use eyre::Result;
 use log_args::LogArgs;
-use subcommands::*;
+use shadow_config::ConfigArgs;
 
 #[derive(Debug, Parser)]
 pub struct Arguments {
@@ -38,7 +37,7 @@ async fn main() -> Result<()> {
     let _ = args.logs.init_tracing();
 
     match args.sub {
-        Subcommands::Config(subargs) => config(subargs)?,
+        Subcommands::Config(subargs) => shadow_config::config(subargs)?,
     };
 
     Ok(())

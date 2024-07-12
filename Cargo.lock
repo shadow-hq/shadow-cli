@@ -539,7 +539,21 @@ dependencies = [
  "eyre",
  "serde",
  "serde_json",
+ "shadow-config",
  "shadow-tracing",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "shadow-config"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "envy",
+ "eyre",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]

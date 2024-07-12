@@ -1,5 +1,5 @@
 [workspace]
-members = ["bin/shadow-cli", "crates/tracing"]
+members = ["bin/shadow-cli", "crates/tracing", "crates/config"]
 default-members = ["bin/shadow-cli"]
 
 # Explicitly set the resolver to version 2, which is the default for packages with edition >= 2021
@@ -103,6 +103,7 @@ use_self = "allow"
 # Shadow
 shadow-cli = { path = "bin/shadow-cli" }
 shadow-tracing = { path = "crates/tracing" }
+shadow-config = { path = "crates/config" }
 
 # Crates.io
 clap = { version = "4", features = ["derive"] }

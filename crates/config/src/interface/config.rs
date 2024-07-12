@@ -1,36 +1,11 @@
 #![allow(deprecated)]
 use std::{env::home_dir, io::Write};
 
-use clap::Parser;
+use crate::constants::{GREEN_ANSI_COLOR, PURPLE_ANSI_COLOR, RESET_ANSI_COLOR};
 use eyre::{eyre, OptionExt, Result};
 use serde::{Deserialize, Serialize};
 
-const PURPLE_ANSI_COLOR: &str = "\x1b[35m";
-const RED_ANSI_COLOR: &str = "\x1b[31m";
-const GREEN_ANSI_COLOR: &str = "\x1b[32m";
-const RESET_ANSI_COLOR: &str = "\x1b[0m";
-
-#[derive(Debug, Clone, Parser)]
-#[clap(
-    about = "Display or edit your shadow CLI configuration.",
-    override_usage = "heimdall config [OPTIONS]"
-)]
-pub struct ConfigArgs {
-    /// The target key to update.
-    #[clap(required = false, default_value = "", hide_default_value = true)]
-    key: String,
-
-    /// The value to set the key to.
-    #[clap(required = false, default_value = "", hide_default_value = true)]
-    value: String,
-
-    /// Whether to enter interactive mode.
-    #[clap(long, short)]
-    interactive: bool,
-}
-
 /// The [`Configuration`] struct represents the configuration of the CLI.
-/// TODO: @jon-becker Move this to crates/config
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Configuration {
     /// The API key to use for Etherscan interactions.
@@ -64,7 +39,7 @@ impl Default for Configuration {
 #[allow(deprecated)]
 impl Configuration {
     /// Returns the current configuration.
-    fn load() -> Result<Self> {
+    pub fn load() -> Result<Self> {
         let mut config_path = home_dir().ok_or_eyre("failed to get home directory")?;
         config_path.push(".shadow");
         config_path.push("config.json");
@@ -115,7 +90,7 @@ impl Configuration {
     }
 
     /// Set a value
-    fn set(&mut self, key: &str, value: &str) -> Result<()> {
+    pub fn set(&mut self, key: &str, value: &str) -> Result<()> {
         match key {
             "etherscan_api_key" => self.etherscan_api_key = Some(value.to_string()),
             "ipfs_gateway_url" => self.ipfs_gateway_url = Some(value.to_string()),
@@ -131,7 +106,7 @@ impl Configuration {
     }
 
     /// Starts blocking interactive mode for configuration.
-    fn from_interactive() -> Result<Self> {
+    pub fn from_interactive() -> Result<Self> {
         let mut config = Configuration::load().unwrap_or_default();
         let input = &mut String::new();
 
@@ -205,37 +180,4 @@ impl Configuration {
 
         Ok(config)
     }
-}
-
-/// The `config` command is used to display and edit the current configuration.
-/// Note @jon-becker: Not using tracing here because it doesnt look good in interactive mode.
-pub(crate) fn config(args: ConfigArgs) -> Result<()> {
-    if args.interactive {
-        Configuration::from_interactive()?;
-        return Ok(());
-    }
-
-    if !args.key.is_empty() {
-        if !args.value.is_empty() {
-            let mut config = Configuration::load()?;
-            match config.set(&args.key, &args.value) {
-                Ok(_) => {
-                    println!(
-                        "{GREEN_ANSI_COLOR}Success: {RESET_ANSI_COLOR}'{}' set to '{}'.",
-                        args.key, args.value
-                    );
-                    println!("Configuration: {}\n", serde_json::to_string_pretty(&config)?);
-                }
-                Err(e) => println!("{RED_ANSI_COLOR}Error: {RESET_ANSI_COLOR}{}", e),
-            };
-        } else {
-            println!("{RED_ANSI_COLOR}Error: {RESET_ANSI_COLOR}use `shadow config <KEY> <VALUE>` to set a key/value pair, or `shadow config --interactive` to enter interactive mode.");
-        }
-    } else {
-        let config = Configuration::load()?;
-        println!("Configuration: {}\n", serde_json::to_string_pretty(&config)?);
-        println!("{GREEN_ANSI_COLOR}Hint: {RESET_ANSI_COLOR}use `shadow config <KEY> <VALUE>` to set a key/value pair, or `shadow config --interactive` to enter interactive mode.");
-    }
-
-    Ok(())
 }
