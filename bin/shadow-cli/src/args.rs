@@ -1,7 +1,8 @@
-//! clap [Args](clap::Args) for logging configuration.
-// Mostly taken from [reth](https://github.com/paradigmxyz/reth)
+use clap::{Parser, Subcommand};
+use shadow_config::ConfigArgs;
 
 use clap::{ArgAction, Args, ValueEnum};
+use shadow_etherscan_fetch::FetchArgs;
 use shadow_tracing::{
     tracing_subscriber::filter::Directive, FileWorkerGuard, LayerInfo, LogFormat, ShadowTracer,
     Tracer,
@@ -128,4 +129,30 @@ impl Verbosity {
             level.into()
         }
     }
+}
+
+#[derive(Debug, Parser)]
+pub struct Arguments {
+    #[clap(subcommand)]
+    pub sub: Subcommands,
+
+    #[clap(flatten)]
+    pub logs: LogArgs,
+}
+
+#[derive(Debug, Subcommand)]
+#[clap(
+    about = "Shadow CLI: An open-source CLI for interacting with the decentralized shadow contract directory.",
+    after_help = "For more information, check out https://logs.xyz"
+)]
+#[allow(clippy::large_enum_variant)]
+pub enum Subcommands {
+    #[clap(name = "config", about = "Display or edit your shadow CLI configuration.")]
+    Config(ConfigArgs),
+    #[clap(
+        name = "etherscan-source",
+        alias = "fetch",
+        about = "Fetch a contract's source code and metadata from Etherscan."
+    )]
+    Fetch(FetchArgs),
 }

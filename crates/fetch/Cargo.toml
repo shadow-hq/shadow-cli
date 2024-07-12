@@ -1,5 +1,5 @@
 [package]
-name = "shadow-cli"
+name = "shadow-etherscan-fetch"
 description.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -14,10 +14,6 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-shadow-tracing.workspace = true
-shadow-config.workspace = true
-shadow-etherscan-fetch.workspace = true
-
 eyre.workspace = true
 tokio.workspace = true
 clap.workspace = true
@@ -25,7 +21,3 @@ tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 envy.workspace = true
-
-[[bin]]
-name = "shadow"
-path = "src/main.rs"
