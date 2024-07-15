@@ -1,5 +1,5 @@
 [package]
-name = "shadow-etherscan-fetch"
+name = "shadow-common"
 description.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -21,10 +21,10 @@ tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 envy.workspace = true
-which.workspace = true
-chrono.workspace = true
-tempdir.workspace = true
-foundry-block-explorers.workspace = true
 alloy.workspace = true
+foundry-block-explorers.workspace = true
 alloy-chains.workspace = true
-shadow-common.workspace = true
+tempdir.workspace = true
+walkdir.workspace = true
+strsim.workspace = true
+alloy-json-abi.workspace = true

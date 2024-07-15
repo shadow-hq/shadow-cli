@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
 
     match args.sub {
         Subcommands::Config(subargs) => shadow_config::config(subargs)?,
-        Subcommands::Fetch(subargs) => shadow_etherscan_fetch::fetch(subargs)?,
+        Subcommands::Fetch(subargs) => shadow_etherscan_fetch::fetch(subargs).await?,
     };
 
     Ok(())
