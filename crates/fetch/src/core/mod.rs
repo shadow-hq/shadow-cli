@@ -130,6 +130,9 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     // rebuild source
     source.write_source_to(&output_dir)?;
 
+    // regenerate foundry.toml
+    settings.generate_config(&output_dir)?;
+
     // compile
     compiler::compile(&output_dir, &settings, &info)?;
 

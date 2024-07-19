@@ -127,9 +127,19 @@ envy = "0.4.2"
 which = "6.0.1"
 chrono = "0.4.38"
 tempdir = "0.3.7"
-foundry-block-explorers = "0.5.0"
-alloy = "0.1.4"
+alloy = "0.2.0"
 alloy-chains = "0.1.23"
 walkdir = "2.5.0"
 strsim = "0.11.1"
 alloy-json-abi = { version = "0.7.6", features = ["serde_json"]}
+foundry-block-explorers = "0.5.0"
+
+revm = { git = "https://github.com/bluealloy/revm", tag = "v40", default-features = false, features = [
+    "ethersdb",
+    "std",
+    "serde-json",
+    "c-kzg",
+    "blst"
+]  }
+ethers-solc = "2.0.14"
+toml = "0.8.15"

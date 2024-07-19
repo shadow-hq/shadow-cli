@@ -28,3 +28,6 @@ tempdir.workspace = true
 walkdir.workspace = true
 strsim.workspace = true
 alloy-json-abi.workspace = true
+revm.workspace = true
+ethers-solc.workspace = true
+toml.workspace = true

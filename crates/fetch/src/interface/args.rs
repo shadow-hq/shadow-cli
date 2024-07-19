@@ -21,4 +21,8 @@ pub struct FetchArgs {
     /// The output directory root to save the contract source code and metadata.
     #[clap(short, long, default_value = ".", required = false)]
     pub output: String,
+
+    /// Whether to force overwrite the existing files.
+    #[clap(short, long)]
+    pub force: bool,
 }

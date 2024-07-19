@@ -212,4 +212,30 @@ impl ShadowContractSettings {
             swarm_source: metadata.swarm_source.clone(),
         }
     }
+
+    /// Writes the settings to a `foundry.toml` configuration file
+    /// Builds the source directory
+    pub fn generate_config(&self, src_root: &PathBuf) -> Result<()> {
+        let config_path = src_root.join("foundry.toml");
+        // Note: this is a temporary implementation, eventually use toml crate
+        let config = format!(
+            r#"[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+optimizer = {}
+optimizer_runs = {}
+bytecode_hash = "none"
+solc_version = "{}"
+"#,
+            self.optimizer.enabled,
+            self.optimizer.runs,
+            self.compiler_version.strip_prefix("v").unwrap_or(&self.compiler_version)
+        );
+
+        // overwrite `foundry.toml` if it already exists
+        std::fs::write(&config_path, &config)?;
+
+        Ok(())
+    }
 }
