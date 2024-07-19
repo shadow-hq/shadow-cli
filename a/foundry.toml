@@ -1,0 +1,8 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+optimizer = false
+optimizer_runs = 0
+bytecode_hash = "none"
+solc_version = "0.4.18+commit.9cf6e910"

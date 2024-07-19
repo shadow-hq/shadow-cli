@@ -44,7 +44,8 @@ impl ShadowContractInfo {
             network: chain.named().expect("invalid chain").to_string(),
             chain_id: chain.id(),
             source: "etherscan".to_string(),
-            unique_events: 0, // This is directly from mainnet, so there are no additional non-canonical events
+            unique_events: 0, /* This is directly from mainnet, so there are no additional
+                               * non-canonical events */
         }
     }
 }

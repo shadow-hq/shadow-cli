@@ -1,24 +1,17 @@
 use alloy::hex::FromHex;
 use alloy_json_abi::JsonAbi;
 use eyre::{eyre, OptionExt, Result};
-use revm::primitives::Bytes;
 use revm::{
-    db::DbAccount,
-    inspector_handle_register,
-    inspectors::TracerEip3155,
-    primitives::{
-        Address as RevmAddress, AnalysisKind, BlockEnv, CreateScheme, Env, HashMap, TransactTo,
-        TxEnv, TxKind, U256,
-    },
-    Database, EvmBuilder,
+    primitives::{Address as RevmAddress, AnalysisKind, BlockEnv, Bytes, Env, TxEnv, TxKind, U256},
+    EvmBuilder,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{path::PathBuf, str::FromStr};
+use std::path::PathBuf;
+use tracing::error;
 
 use crate::{ShadowContractInfo, ShadowContractSettings};
 
-const DEPLOYER_BALANCE: u64 = 10000000000000000000;
 const DEPLOY_TX_GAS: u64 = 10000000000000000000;
 
 fn construct_init_code(
@@ -69,7 +62,13 @@ pub fn compile(
     let mut files = Vec::new();
     let walker = walkdir::WalkDir::new(build_artifact_dir.path());
     for entry in walker {
-        let entry = entry?;
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(err) => {
+                error!("failed to read entry: {}", err);
+                continue;
+            }
+        };
         if entry.file_type().is_file() && entry.path().extension().unwrap_or_default() == "json" {
             files.push(entry.path().to_path_buf());
         }

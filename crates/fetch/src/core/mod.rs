@@ -103,7 +103,8 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
         std::process::exit(1);
     }
 
-    // serialize and write info, source, and settings to args.output / {}.json. make directories if necessary
+    // serialize and write info, source, and settings to args.output / {}.json. make directories if
+    // necessary
     let output_dir = PathBuf::from_str(&args.output)?;
     std::fs::create_dir_all(output_dir.clone())?;
     let info_path = output_dir.join("info.json");

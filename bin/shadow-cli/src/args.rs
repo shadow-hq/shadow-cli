@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use shadow_compile::CompileArgs;
 use shadow_config::ConfigArgs;
 
 use clap::{ArgAction, Args, ValueEnum};
@@ -132,12 +133,12 @@ impl Verbosity {
 }
 
 #[derive(Debug, Parser)]
-pub struct Arguments {
+pub(crate) struct Arguments {
     #[clap(subcommand)]
-    pub sub: Subcommands,
+    pub(crate) sub: Subcommands,
 
     #[clap(flatten)]
-    pub logs: LogArgs,
+    pub(crate) logs: LogArgs,
 }
 
 #[derive(Debug, Subcommand)]
@@ -146,7 +147,7 @@ pub struct Arguments {
     after_help = "For more information, check out https://logs.xyz"
 )]
 #[allow(clippy::large_enum_variant)]
-pub enum Subcommands {
+pub(crate) enum Subcommands {
     #[clap(name = "config", about = "Display or edit your shadow CLI configuration.")]
     Config(ConfigArgs),
     #[clap(
@@ -155,4 +156,9 @@ pub enum Subcommands {
         about = "Fetch a contract's source code and metadata from Etherscan."
     )]
     Fetch(FetchArgs),
+    #[clap(
+        name = "compile",
+        about = "Compile a shadowed contract with the original contract settings"
+    )]
+    Compile(CompileArgs),
 }

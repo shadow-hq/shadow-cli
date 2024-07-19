@@ -1,5 +1,7 @@
-use crate::constants::{GREEN_ANSI_COLOR, RED_ANSI_COLOR, RESET_ANSI_COLOR};
-use crate::{ConfigArgs, Configuration};
+use crate::{
+    constants::{GREEN_ANSI_COLOR, RED_ANSI_COLOR, RESET_ANSI_COLOR},
+    ConfigArgs, Configuration,
+};
 use eyre::Result;
 
 /// The `config` command is used to display and edit the current configuration.
