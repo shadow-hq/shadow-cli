@@ -1,9 +1,0 @@
-{
-  "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-  "contractDeployer": "0x36928500bc1dcd7af6a2b4008875cc336b927d57",
-  "name": "TetherToken",
-  "network": "mainnet",
-  "chainId": 1,
-  "source": "etherscan",
-  "uniqueEvents": 0
-}
