@@ -1,9 +1,0 @@
-{
-  "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-  "contract_deployer": "0x4f26ffbe5f04ed43630fdc30a87638d53d0b0876",
-  "name": "WETH9",
-  "network": "mainnet",
-  "chain_id": 1,
-  "source": "etherscan",
-  "unique_events": 0
-}
