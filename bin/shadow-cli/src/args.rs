@@ -1,9 +1,10 @@
+use clap::{ArgAction, Args, ValueEnum};
 use clap::{Parser, Subcommand};
 use shadow_compile::CompileArgs;
 use shadow_config::ConfigArgs;
-
-use clap::{ArgAction, Args, ValueEnum};
 use shadow_etherscan_fetch::FetchArgs;
+use shadow_init::InitArgs;
+
 use shadow_tracing::{
     tracing_subscriber::filter::Directive, FileWorkerGuard, LayerInfo, LogFormat, ShadowTracer,
     Tracer,
@@ -161,4 +162,9 @@ pub(crate) enum Subcommands {
         about = "Compile a shadowed contract with the original contract settings"
     )]
     Compile(CompileArgs),
+    #[clap(
+        name = "init",
+        about = "Initialize a new shadow contract group which may be pinned to IPFS"
+    )]
+    Init(InitArgs),
 }

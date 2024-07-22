@@ -44,11 +44,14 @@ pub fn compile(
     metadata: &ShadowContractInfo,
 ) -> Result<Bytes> {
     // run `forge build` to compile the contract
-    let build_artifact_dir = tempdir::TempDir::new("out")?;
+    let build_artifact_dir = root.join("out");
+    if !build_artifact_dir.exists() {
+        std::fs::create_dir(&build_artifact_dir)?;
+    }
+
+    // compile
     let output = std::process::Command::new("forge")
         .arg("build")
-        .arg("--out")
-        .arg(build_artifact_dir.path())
         .arg("--force")
         .arg("--no-cache")
         .current_dir(root)
@@ -60,7 +63,7 @@ pub fn compile(
 
     // list the files in the build artifact directory including nested directories
     let mut files = Vec::new();
-    let walker = walkdir::WalkDir::new(build_artifact_dir.path());
+    let walker = walkdir::WalkDir::new(build_artifact_dir.as_path());
     for entry in walker {
         let entry = match entry {
             Ok(entry) => entry,
@@ -135,8 +138,6 @@ pub fn compile(
 
     let result = evm.transact_preverified()?.result;
     let bytecode = result.into_output().ok_or_eyre("no bytecode")?;
-
-    println!("Bytecode: {:?}", bytecode);
 
     Ok(bytecode)
 }

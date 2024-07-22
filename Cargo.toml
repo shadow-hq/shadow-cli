@@ -1,5 +1,5 @@
 [workspace]
-members = ["bin/shadow-cli", "crates/tracing", "crates/config", "crates/fetch", "crates/common", "crates/compile"]
+members = ["bin/shadow-cli", "crates/tracing", "crates/config", "crates/fetch", "crates/common", "crates/compile", "crates/init"]
 default-members = ["bin/shadow-cli"]
 
 # Explicitly set the resolver to version 2, which is the default for packages with edition >= 2021
@@ -107,6 +107,7 @@ shadow-config = { path = "crates/config" }
 shadow-etherscan-fetch = { path = "crates/fetch" }
 shadow-common = { path = "crates/common" }
 shadow-compile = { path = "crates/compile" }
+shadow-init = { path = "crates/init" }
 
 # Crates.io
 clap = { version = "4", features = ["derive"] }
@@ -126,7 +127,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 envy = "0.4.2"
 which = "6.0.1"
-chrono = "0.4.38"
+chrono = { version = "0.4.38", features = ["serde"] }
 tempdir = "0.3.7"
 alloy = "0.2.0"
 alloy-chains = "0.1.23"

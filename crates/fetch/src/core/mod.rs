@@ -4,7 +4,10 @@ use crate::FetchArgs;
 use alloy_chains::{Chain, NamedChain};
 use eyre::{eyre, OptionExt, Result};
 use foundry_block_explorers::Client;
-use shadow_common::{compiler, ShadowContractInfo, ShadowContractSettings, ShadowContractSource};
+use shadow_common::{
+    compiler, ShadowContractGroupInfo, ShadowContractInfo, ShadowContractSettings,
+    ShadowContractSource,
+};
 use tracing::{error, info, trace, warn};
 use which::Path;
 
@@ -75,6 +78,21 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     };
     trace!("using chain: {} ({})", chain, chain.id());
 
+    // check if this is part of a shadow contract group
+    let mut output_dir = PathBuf::from_str(&args.root)?;
+    let group_info = match ShadowContractGroupInfo::from_path(&output_dir) {
+        Ok(group_info) => {
+            // we need to update the output path under `output_dir/chain_id/contract_address`
+            output_dir.push(chain.id().to_string());
+            output_dir.push(args.address.to_lowercase());
+            Some(group_info)
+        }
+        Err(_) => {
+            warn!("This is not part of a shadow contract group. You will need to manually add the contract to a group if you wish to pin it to IPFS.");
+            None
+        }
+    };
+
     // fetch contract metadata and creation data
     let client = Client::new(chain, args.etherscan_api_key.unwrap_or_default())?;
     let address = args.address.parse().map_err(|_| eyre!("Invalid address: {}", args.address))?;
@@ -86,11 +104,12 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     let settings = ShadowContractSettings::new(&metadata);
 
     info!("successfully fetched contract information from etherscan");
+    info!("writing contract to {}", output_dir.display());
 
     // run forge init --no-git --no-commit
     let status = std::process::Command::new("forge")
         .arg("init")
-        .arg(&args.output)
+        .arg(output_dir.clone())
         .arg("--no-git")
         .arg("--no-commit")
         .arg("--quiet")
@@ -105,7 +124,6 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
 
     // serialize and write info, source, and settings to args.output / {}.json. make directories if
     // necessary
-    let output_dir = PathBuf::from_str(&args.output)?;
     std::fs::create_dir_all(output_dir.clone())?;
     let info_path = output_dir.join("info.json");
     let source_path = output_dir.join("source.json");

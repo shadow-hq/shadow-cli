@@ -18,9 +18,9 @@ pub struct FetchArgs {
     #[clap(short = 'i', long, required = false)]
     pub chain_id: Option<u64>,
 
-    /// The output directory root to save the contract source code and metadata.
+    /// The path to the directory or contract group in which to save the fetched contract.
     #[clap(short, long, default_value = ".", required = false)]
-    pub output: String,
+    pub root: String,
 
     /// Whether to force overwrite the existing files.
     #[clap(short, long)]
