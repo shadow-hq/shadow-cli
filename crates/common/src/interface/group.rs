@@ -1,19 +1,13 @@
-use std::{env::temp_dir, path::PathBuf};
+use std::path::PathBuf;
 
 use alloy::primitives::Address;
-use alloy_chains::Chain;
 use chrono::{DateTime, Utc};
-use eyre::Result;
-use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
+use eyre::{eyre, Result};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use tracing::{debug, error, info};
 
-use crate::{
-    compiler, ShadowContractInfo, ShadowContractSettings, ShadowContractSource,
-    ShadowContractSourceFile,
-};
+use crate::{compiler, ShadowContractInfo, ShadowContractSettings, ShadowContractSource};
 
 /// Contains the initial, default README.md file for a contract group
 pub const DEFAULT_README: &str = include_str!("../../templates/README.md");
@@ -54,6 +48,58 @@ impl From<ShadowContractInfo> for ShadowContractEntry {
     }
 }
 
+impl ShadowContractEntry {
+    /// Compiles the contract that this entry references
+    pub fn compile(&self, root: &PathBuf, output: &PathBuf) -> Result<()> {
+        let start_time = std::time::Instant::now();
+
+        // build paths
+        let contract_path = root.join(self.chain_id.to_string()).join(self.address.to_string());
+        let contract_info_path = contract_path.join("info.json");
+        let contract_settings_path = contract_path.join("settings.json");
+        let contract_src_path = contract_path.join("src");
+
+        let contract_output_path =
+            output.join(self.chain_id.to_string()).join(self.address.to_string());
+        let out_bytecode_file = contract_output_path.join("bytecode.hex");
+        let out_abi_file = contract_output_path.join("abi.json");
+        let out_settings_file = contract_output_path.join("settings.json");
+        let out_contract_info_file = contract_output_path.join("info.json");
+        let out_source_file = contract_output_path.join("source.json");
+
+        // ensure output directory exists
+        std::fs::create_dir_all(&contract_output_path)?;
+
+        // load contract info and compiler settings
+        let mut contract_info = ShadowContractInfo::from_path(&contract_info_path)?;
+        let contract_settings = ShadowContractSettings::from_path(&contract_settings_path)?;
+
+        debug!(
+            "Compiling contract {} ({}:{}) with {}...",
+            contract_info.name, self.chain_id, self.address, contract_settings.compiler_version
+        );
+
+        // compile the contract
+        let output = compiler::compile(&contract_path, &contract_settings, &contract_info)?;
+
+        debug!("Compiled {} successfully in {:?}", contract_info.name, start_time.elapsed());
+
+        // update contract info
+        contract_info.unique_events = output.abi.events.len() as u64;
+        let source = ShadowContractSource::from_path(&contract_src_path, &contract_settings)?;
+
+        // write output files
+        std::fs::write(out_bytecode_file, format!("0x{}", hex::encode(&output.bytecode)))?;
+        std::fs::write(out_abi_file, serde_json::to_string(&output.abi)?)?;
+        std::fs::write(out_settings_file, serde_json::to_string(&contract_settings)?)?;
+        std::fs::write(out_contract_info_file, serde_json::to_string(&contract_info)?)?;
+        std::fs::write(contract_info_path, serde_json::to_string_pretty(&contract_info)?)?; // update original contract info
+        std::fs::write(out_source_file, serde_json::to_string(&source)?)?;
+
+        Ok(())
+    }
+}
+
 impl Default for ShadowContractGroupInfo {
     fn default() -> Self {
         Self {
@@ -80,7 +126,7 @@ impl ShadowContractGroupInfo {
         Ok(info)
     }
 
-    /// Writes the folder structure of the contract group to the provided path
+    /// Writes the folder structure of the contract group to the provided path.
     /// Returns the path to the created folder
     pub fn write_folder_structure(&self, parent: PathBuf) -> Result<PathBuf> {
         // parent/ContractGroup_06_20_2024_12_00
@@ -130,98 +176,45 @@ impl ShadowContractGroupInfo {
         Ok(())
     }
 
-    /// Prepares the contract group for pinning to IPFS
-    pub fn prepare(&self) -> Result<PathBuf> {
+    /// Validates that the group information is ready for pinning to IPFS
+    pub fn validate(&self) -> Result<()> {
+        // group must have a display name
+        if &self.display_name == "Unnamed Contract Group" {
+            error!("This is an unnamed contract group. You must name the group in {}/info.json before pushing.", self.root.display());
+            return Err(eyre!("contract group name is not set"));
+        }
+
+        // creator must exist
+        if self.creator.is_none() {
+            error!("This contract group has no creator. You must add a creator address in {}/info.json before pushing.", self.root.display());
+            return Err(eyre!("no creator set"));
+        }
+
+        Ok(())
+    }
+
+    /// Prepares the contract group for pinning to IPFS. Compiles all shadow contracts
+    /// in the group and generates the proper folder structure which will be pinned
+    /// to IPFS.
+    pub fn prepare(&mut self) -> Result<PathBuf> {
+        // re-scan the contracts directory for new contracts
+        let _ = &self.update_contracts()?;
+
         // create an `out` directory in the group's root
         let out_dir = self.root.join("out");
-        if out_dir.exists() {
-            std::fs::remove_dir_all(&out_dir)?;
-        }
+        std::fs::remove_dir_all(&out_dir).ok();
         std::fs::create_dir_all(&out_dir)?;
 
-        // Copy the Folder structure to the out directory
+        // copy `info.json` and `README.md` to the out directory, since this will be pinned
         let out_folder = self.write_folder_structure(out_dir)?;
 
-        // We need to compile each contract in the group. We can do this in parallel w/ rayon
+        // we need to compile each contract in the group. We can do this in parallel w/ rayon
         info!("Compiling {} shadow contracts", self.contracts.len());
         self.contracts
             .par_iter()
-            .map(|contract| {
-                let start_time = std::time::Instant::now();
-                debug!("Compiling {} ({})", contract.address, contract.chain_id);
-
-                let contract_path = self
-                    .root
-                    .join(contract.chain_id.to_string())
-                    .join(contract.address.to_string());
-                let contract_info_path = contract_path.join("info.json");
-                let contract_settings_path = contract_path.join("settings.json");
-
-                let mut contract_info = ShadowContractInfo::from_path(&contract_info_path)?;
-                let contract_settings = ShadowContractSettings::from_path(&contract_settings_path)?;
-
-                let contract_output_path = out_folder
-                    .join(contract.chain_id.to_string())
-                    .join(contract.address.to_string());
-                std::fs::create_dir_all(&contract_output_path)?;
-
-                let output = compiler::compile(&contract_path, &contract_settings, &contract_info)?;
-
-                debug!("Compiled {} in {}ms", contract.address, start_time.elapsed().as_millis());
-
-                // write bytecode to `contract_output_path/bytecode.hex`
-                let out_bytecode_file = contract_output_path.join("bytecode.hex");
-                std::fs::write(out_bytecode_file, format!("0x{}", hex::encode(&output.bytecode)))?;
-
-                // write abi to `contract_output_path/abi.json`
-                let out_abi_file = contract_output_path.join("abi.json");
-                std::fs::write(out_abi_file, serde_json::to_string(&output.abi)?)?;
-
-                // write settings to `contract_output_path/settings.json`
-                let out_settings_file = contract_output_path.join("settings.json");
-                std::fs::write(out_settings_file, serde_json::to_string(&contract_settings)?)?;
-
-                // update event count in contract_info
-                contract_info.unique_events = output.abi.events.len() as u64;
-                let out_contract_info_file = contract_output_path.join("info.json");
-                std::fs::write(out_contract_info_file, serde_json::to_string(&contract_info)?)?;
-                std::fs::write(contract_info_path, serde_json::to_string_pretty(&contract_info)?)?; // update original contract info
-
-                // rebuild source
-                let src_path = contract_path.join("src");
-                let out_source_file = contract_output_path.join("source.json");
-                let source = ShadowContractSource {
-                    language: if contract_settings.compiler_version.starts_with("vyper") {
-                        "Vyper".to_string()
-                    } else {
-                        "Solidity".to_string()
-                    },
-                    compiler_version: contract_settings.compiler_version,
-                    // walk the contract directory and add all .sol / .vy files
-                    contract_files: walkdir::WalkDir::new(&src_path)
-                        .into_iter()
-                        .filter_map(|e| e.ok())
-                        .filter(|e| {
-                            (e.file_name().to_string_lossy().ends_with(".sol") ||
-                                e.file_name().to_string_lossy().ends_with(".vy")) &&
-                                e.file_type().is_file()
-                        })
-                        .map(|e| {
-                            let path = e.path();
-                            let contents = std::fs::read_to_string(path)?;
-                            Ok(ShadowContractSourceFile {
-                                file_name: // entire path, but strip everything before src/
-                                    path.strip_prefix(&src_path)?.to_string_lossy().to_string(),
-                                content:contents,
-                            })
-                        })
-                        .collect::<Result<Vec<ShadowContractSourceFile>>>()?,
-                };
-                std::fs::write(out_source_file, serde_json::to_string(&source)?)?;
-
-                Ok::<(), eyre::Report>(())
-            })
+            .map(|contract| contract.compile(&self.root, &out_folder))
             .collect::<Result<Vec<()>>>()?;
+        info!("Compiled all shadow contracts successfully");
 
         Ok(out_folder)
     }

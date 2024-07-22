@@ -1,5 +1,6 @@
 use clap::Parser;
 
+/// Arguments for the `config` subcommand
 #[derive(Debug, Clone, Parser)]
 #[clap(
     about = "Display or edit your shadow CLI configuration.",

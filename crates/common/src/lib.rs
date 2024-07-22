@@ -1,3 +1,5 @@
+//! Common utilities and interfaces used by the [`shadow-cli`]
+
 mod interface;
 mod utils;
 

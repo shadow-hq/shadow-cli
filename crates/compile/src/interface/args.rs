@@ -1,5 +1,6 @@
 use clap::Parser;
 
+/// Arguments for the `compile` subcommand
 #[derive(Debug, Clone, Parser)]
 #[clap(about = "Compile a shadowed contract with the original contract settings")]
 pub struct CompileArgs {

@@ -10,16 +10,12 @@ use serde::{Deserialize, Serialize};
 pub struct Configuration {
     /// The API key to use for Etherscan interactions.
     pub etherscan_api_key: Option<String>,
-
     /// The URL of the IPFS gateway to use for IPFS interactions.
     pub ipfs_gateway_url: Option<String>,
-
     /// The API key to use for IPFS interactions.
     pub pinata_api_key: Option<String>,
-
     /// The secret API key to use for IPFS interactions.
     pub pinata_secret_api_key: Option<String>,
-
     /// The wallet address to use for signing and attestations.
     pub wallet_address: Option<String>,
 }

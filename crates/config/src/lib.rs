@@ -1,7 +1,9 @@
+//! The `config` subcommand
+
 mod core;
 mod interface;
 mod utils;
 
 pub use core::*;
 pub use interface::*;
-pub use utils::*;
+pub(crate) use utils::*;

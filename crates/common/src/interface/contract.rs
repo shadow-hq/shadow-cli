@@ -135,6 +135,38 @@ impl ShadowContractSource {
 
         Ok(())
     }
+
+    /// Creates a new instance of [`ShadowContractSource`] from the provided
+    /// path to /src directory and contract settings
+    pub fn from_path(path: &PathBuf, contract_settings: &ShadowContractSettings) -> Result<Self> {
+        Ok(Self {
+            // we can determine the language based on the compiler version
+            language: if contract_settings.compiler_version.starts_with("vyper") {
+                "Vyper".to_string()
+            } else {
+                "Solidity".to_string()
+            },
+            compiler_version: contract_settings.compiler_version.to_owned(),
+            // walk the contract directory and collect all .sol and .vy files
+            contract_files: walkdir::WalkDir::new(&path)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    (e.file_name().to_string_lossy().ends_with(".sol") ||
+                        e.file_name().to_string_lossy().ends_with(".vy")) &&
+                        e.file_type().is_file()
+                })
+                .map(|e| {
+                    let path = e.path();
+                    let contents = std::fs::read_to_string(path)?;
+                    Ok(ShadowContractSourceFile {
+                        file_name: path.strip_prefix(&path)?.to_string_lossy().to_string(),
+                        content: contents,
+                    })
+                })
+                .collect::<Result<Vec<ShadowContractSourceFile>>>()?,
+        })
+    }
 }
 
 /// Shadow contract settings
@@ -222,20 +254,11 @@ impl ShadowContractSettings {
     }
 
     /// Writes the settings to a `foundry.toml` configuration file
-    /// Builds the source directory
+    /// TODO @jon-becker: Eventually use the toml crate for this
     pub fn generate_config(&self, src_root: &PathBuf) -> Result<()> {
         let config_path = src_root.join("foundry.toml");
-        // Note: this is a temporary implementation, eventually use toml crate
         let config = format!(
-            r#"[profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
-optimizer = {}
-optimizer_runs = {}
-bytecode_hash = "none"
-solc_version = "{}"
-"#,
+            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"",
             self.optimizer.enabled,
             self.optimizer.runs,
             self.compiler_version.strip_prefix("v").unwrap_or(&self.compiler_version)

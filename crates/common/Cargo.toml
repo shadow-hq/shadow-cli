@@ -34,3 +34,4 @@ toml.workspace = true
 chrono.workspace = true
 rayon.workspace = true
 hex.workspace = true
+which.workspace = true

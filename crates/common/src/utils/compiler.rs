@@ -8,21 +8,8 @@ use revm::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::PathBuf;
-use tracing::error;
 
 use crate::{ShadowContractInfo, ShadowContractSettings};
-
-const DEPLOY_TX_GAS: u64 = 10000000000000000000;
-
-fn construct_init_code(
-    new_contract_bytecode: Bytes,
-    original_constructor_arguments: &[u8],
-) -> Bytes {
-    let mut init_code = new_contract_bytecode.to_vec();
-    init_code.extend_from_slice(original_constructor_arguments);
-
-    Bytes::from(init_code)
-}
 
 /// Compiler Output
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -36,41 +23,94 @@ pub struct CompilerOutput {
     pub bytecode: Bytes,
 }
 
-// TODO: vyper support
-/// Compile a contract using the original settings
+/// Compile a contract using the original settings.
+/// TODO @jon-becker: Ensure vyper is supported
 pub fn compile(
     root: &PathBuf,
     settings: &ShadowContractSettings,
     metadata: &ShadowContractInfo,
 ) -> Result<CompilerOutput> {
-    // run `forge build` to compile the contract
+    // create the artifact directory
     let build_artifact_dir = root.join("out");
-    if !build_artifact_dir.exists() {
-        std::fs::create_dir(&build_artifact_dir)?;
-    }
+    std::fs::create_dir_all(&build_artifact_dir)?;
 
-    // compile
+    // compile via forge
+    let _ = compile_contract(root).map_err(|e| eyre!("failed to compile contract {}", e))?;
+
+    // find the contract artifact in the build directory
+    let contract_artifact = find_contract_artifact(&build_artifact_dir, &metadata.name)
+        .map_err(|e| eyre!("contract artifact not found: {}", e))?;
+
+    // simulate the contract deployment w/ the original settings and deployer
+    // TODO @jon-becker: we might need an anvil fork running if the constructor calls out to other
+    // contracts
+    let original_deployer = RevmAddress::from(metadata.contract_deployer);
+    let initcode = construct_init_code(&contract_artifact, &settings.constructor_arguments)
+        .map_err(|e| eyre!("failed to construct init code: {}", e))?;
+    let deployment_env = build_deployment_env(original_deployer, initcode);
+
+    // execute the deployment transaction
+    let mut evm = EvmBuilder::default().with_env(deployment_env).build();
+    let result =
+        evm.transact_preverified().map_err(|e| eyre!("failed to deploy contract: {}", e))?.result;
+
+    Ok(CompilerOutput {
+        abi: serde_json::from_value(contract_artifact["abi"].clone())?,
+        method_identifiers: contract_artifact["methodIdentifiers"].clone(),
+        bytecode: result.into_output().ok_or_eyre("no bytecode")?,
+    })
+}
+
+/// Construct the init code for the contract by concatenating the new contract
+/// bytecode with the original constructor arguments
+fn construct_init_code(
+    contract_artifact: &Value,
+    original_constructor_arguments: &[u8],
+) -> Result<Bytes> {
+    let new_contract_bytecode = Bytes::from_hex(
+        contract_artifact
+            .get("bytecode")
+            .ok_or_else(|| eyre!("no bytecode found"))?
+            .get("object")
+            .ok_or_else(|| eyre!("no bytecode object found"))?
+            .as_str()
+            .ok_or_else(|| eyre!("bytecode is not a string"))?
+            .to_owned(),
+    )?;
+
+    let mut init_code = new_contract_bytecode.to_vec();
+    init_code.extend_from_slice(original_constructor_arguments);
+
+    Ok(Bytes::from(init_code))
+}
+
+/// Compiles all contracts at the given path by invoking the forge build command
+fn compile_contract(root: &PathBuf) -> Result<()> {
     let output = std::process::Command::new("forge")
         .arg("build")
         .arg("--force")
         .arg("--no-cache")
         .current_dir(root)
+        .stderr(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         eyre::bail!("forge build failed: {}", stderr);
     }
 
-    // list the files in the build artifact directory including nested directories
+    Ok(())
+}
+
+/// Find the contract artifact in the build artifact directory
+fn find_contract_artifact(build_artifact_dir: &PathBuf, contract_name: &str) -> Result<Value> {
+    // find all artifacts in the build artifact directory
     let mut files = Vec::new();
     let walker = walkdir::WalkDir::new(build_artifact_dir.as_path());
     for entry in walker {
         let entry = match entry {
             Ok(entry) => entry,
-            Err(err) => {
-                error!("failed to read entry: {}", err);
-                continue;
-            }
+            Err(_) => continue,
         };
         if entry.file_type().is_file() && entry.path().extension().unwrap_or_default() == "json" {
             files.push(entry.path().to_path_buf());
@@ -78,7 +118,6 @@ pub fn compile(
     }
 
     // use strsim to find the closest match to the contract name with `.json` removed
-    let contract_name = metadata.name.clone();
     let mut closest_match = None;
     let mut closest_distance = usize::MAX;
     for file in &files {
@@ -93,51 +132,28 @@ pub fn compile(
     // if no match is found, return an error
     let closest_match = closest_match.ok_or_else(|| eyre!("no contract artifact found"))?;
     let compiler_aritfacts: Value = serde_json::from_reader(std::fs::File::open(closest_match)?)?;
-    let initcode = compiler_aritfacts
-        .get("bytecode")
-        .ok_or_else(|| eyre!("no bytecode found"))?
-        .get("object")
-        .ok_or_else(|| eyre!("no bytecode object found"))?
-        .as_str()
-        .ok_or_else(|| eyre!("bytecode is not a string"))?
-        .to_owned();
 
-    // 2. simulate a deploy w/ the original settings and deployer
-    let original_deployer = RevmAddress::from(metadata.contract_deployer);
-    let original_init_code =
-        construct_init_code(Bytes::from_hex(initcode)?, &settings.constructor_arguments);
+    Ok(compiler_aritfacts)
+}
 
-    let mut evm = EvmBuilder::default()
-        .with_env({
-            let mut cfg_env = revm::primitives::CfgEnv::default();
-            cfg_env.limit_contract_code_size = Some(usize::MAX);
-            cfg_env.chain_id = 1u64;
-            cfg_env.perf_analyse_created_bytecodes = AnalysisKind::Raw;
-            Box::new(Env {
-                cfg: cfg_env.clone(),
-                tx: TxEnv {
-                    caller: original_deployer,
-                    gas_price: U256::from(1),
-                    gas_limit: DEPLOY_TX_GAS,
-                    value: U256::ZERO,
-                    data: original_init_code,
-                    transact_to: TxKind::Create,
-                    ..Default::default()
-                },
-                block: BlockEnv { number: U256::from(4470000), ..Default::default() },
-                ..Default::default()
-            })
-        })
-        .build();
-
-    let result = evm.transact_preverified()?.result;
-    let bytecode = result.into_output().ok_or_eyre("no bytecode")?;
-
-    let compiler_output = CompilerOutput {
-        abi: serde_json::from_value(compiler_aritfacts["abi"].clone())?,
-        method_identifiers: compiler_aritfacts["methodIdentifiers"].clone(),
-        bytecode,
-    };
-
-    Ok(compiler_output)
+/// Builds the EVM environment for the deployment
+fn build_deployment_env(original_deployer: RevmAddress, initcode: Bytes) -> Box<Env> {
+    let mut cfg_env = revm::primitives::CfgEnv::default();
+    cfg_env.limit_contract_code_size = Some(usize::MAX);
+    cfg_env.chain_id = 1u64;
+    cfg_env.perf_analyse_created_bytecodes = AnalysisKind::Raw;
+    Box::new(Env {
+        cfg: cfg_env.clone(),
+        tx: TxEnv {
+            caller: original_deployer,
+            gas_price: U256::from(1),
+            gas_limit: u64::MAX,
+            value: U256::ZERO,
+            data: initcode,
+            transact_to: TxKind::Create,
+            ..Default::default()
+        },
+        block: BlockEnv { number: U256::from(4470000), ..Default::default() },
+        ..Default::default()
+    })
 }

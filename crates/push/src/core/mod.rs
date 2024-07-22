@@ -1,62 +1,50 @@
 use std::{path::PathBuf, str::FromStr};
 
-use eyre::{bail, eyre, OptionExt, Result};
-use pinata_sdk::{PinByFile, PinataApi};
-use shadow_common::ShadowContractGroupInfo;
-use tracing::{debug, error, info};
+use eyre::{eyre, Result};
+use shadow_common::{forge::ensure_forge_installed, ShadowContractGroupInfo};
+use tracing::{error, info};
 
-use crate::PushArgs;
+use crate::{ipfs::pin_shadow_contract_group, PushArgs};
 
 /// The `push` subcommand. Compiles and uploads/pins a shadow contract group to IPFS.
 pub async fn push(args: PushArgs) -> Result<()> {
-    let root_dir = PathBuf::from_str(&args.root)?;
-    let ipfs_api_key = args.pinata_api_key.ok_or_eyre(
-           "IPFS API key must be set. Use the --pinata-api-key flag or set the IPFS_API_KEY environment variable.")?;
-    let ipfs_secret_api_key = args.pinata_secret_api_key.ok_or_eyre(
-           "IPFS secret API key must be set. Use the --pinata-secret-api-key flag or set the IPFS_SECRET_API_KEY environment variable.")?;
+    // ensure forge is installed on the system
+    let _ = ensure_forge_installed()?;
 
-    info!("validating shadow contract group at {}", root_dir.display());
+    // ensure args are valid
+    args.validate().map_err(|e| eyre!("Invalid arguments: {}", e))?;
 
     // root dir must be a shadow contract group
-    let mut group_info = match ShadowContractGroupInfo::from_path(&root_dir) {
-        Ok(group_info) => group_info,
-        Err(_) => {
+    let root_dir = PathBuf::from_str(&args.root)?;
+    let mut group_info = ShadowContractGroupInfo::from_path(&root_dir)
+        .map_err(|e| {
             error!("This is not part of a shadow contract group. You will need to manually add the contract to a group if you wish to pin it to IPFS.");
-            return Err(eyre!("not part of a shadow contract group"));
-        }
-    };
+            eyre!("Failed to load shadow contract group: {}", e)
+        })?;
 
-    // group must have a display name
-    if &group_info.display_name == "Unnamed Contract Group" {
-        error!("This is an unnamed contract group. You must name the group in {}/info.json before pushing.", root_dir.display());
-        return Err(eyre!("unnamed contract group"));
-    }
+    // validate that the group is ready for pinning
+    info!("validating shadow contract group at {}", root_dir.display());
+    group_info.validate().map_err(|e| eyre!("Failed to validate shadow contract group: {}", e))?;
 
-    // creator must exist
-    if group_info.creator.is_none() {
-        error!("This contract group has no creator. You must add a creator address in {}/info.json before pushing.", root_dir.display());
-        return Err(eyre!("no creator"));
-    }
+    // prepare the group for pinning. this will compile all contracts and build the final
+    // IPFS folder structure
+    let contract_group_artifact_path = group_info
+        .prepare()
+        .map_err(|e| eyre!("Failed to prepare shadow contract group: {}", e))?;
 
-    // update the group_info
-    group_info.update_contracts()?;
-
-    // prepare the group for pinning
-    let contract_group_artifact_path = group_info.prepare()?;
-    let contract_group_artifact_path =
-        format!("{}/", contract_group_artifact_path.to_string_lossy().to_string());
-
+    // pin the created folder to IPFS
     info!("pinning shadow contract group to IPFS");
-    let api = PinataApi::new(&ipfs_api_key, &ipfs_secret_api_key)
-        .map_err(|e| eyre!("Failed to create Pinata API client: {}", e))?;
+    let pin_result = pin_shadow_contract_group(
+        &contract_group_artifact_path,
+        &args.pinata_api_key.expect("pinata_api_key should exist"),
+        &args.pinata_secret_api_key.expect("pinata_secret_api_key should exist"),
+        &args.ipfs_gateway_url,
+    )
+    .await
+    .map_err(|e| eyre!("Failed to pin shadow contract group to IPFS: {}", e))?;
+    info!("pinned shadow contract group to IPFS at {}", pin_result.ipfs_url);
 
-    println!("contract_group_artifact_path: {:?}", contract_group_artifact_path);
-    let result = api
-        .pin_file(PinByFile::new(contract_group_artifact_path))
-        .await
-        .map_err(|e| eyre!("Failed to pin file: {}", e))?;
-
-    println!("result: {:?}", result);
+    // TODO @jon-becker: must call out to logs.xyz/pin/{} to pin internally
 
     Ok(())
 }

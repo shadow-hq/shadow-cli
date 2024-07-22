@@ -1,5 +1,6 @@
 use clap::Parser;
 
+/// Arguments for the `init` subcommand
 #[derive(Debug, Clone, Parser)]
 #[clap(about = "Initialize a new shadow contract group which may be pinned to IPFS")]
 pub struct InitArgs {

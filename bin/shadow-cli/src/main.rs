@@ -30,6 +30,10 @@ async fn main() -> Result<()> {
         Subcommands::Push(mut subargs) => {
             subargs.pinata_api_key = config.pinata_api_key;
             subargs.pinata_secret_api_key = config.pinata_secret_api_key;
+            if let Some(gateway_url) = config.ipfs_gateway_url {
+                subargs.ipfs_gateway_url = gateway_url;
+            }
+
             shadow_push::push(subargs).await?
         }
     };
