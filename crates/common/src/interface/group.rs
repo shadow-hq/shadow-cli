@@ -54,13 +54,14 @@ impl ShadowContractEntry {
         let start_time = std::time::Instant::now();
 
         // build paths
-        let contract_path = root.join(self.chain_id.to_string()).join(self.address.to_string());
+        let contract_path =
+            root.join(self.chain_id.to_string()).join(self.address.to_string().to_lowercase());
         let contract_info_path = contract_path.join("info.json");
         let contract_settings_path = contract_path.join("settings.json");
         let contract_src_path = contract_path.join("src");
 
         let contract_output_path =
-            output.join(self.chain_id.to_string()).join(self.address.to_string());
+            output.join(self.chain_id.to_string()).join(self.address.to_string().to_lowercase());
         let out_bytecode_file = contract_output_path.join("bytecode.hex");
         let out_abi_file = contract_output_path.join("abi.json");
         let out_settings_file = contract_output_path.join("settings.json");
