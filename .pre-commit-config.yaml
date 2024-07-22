@@ -1,0 +1,28 @@
+fail_fast: true
+
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+- repo: local
+  hooks:
+    - id: fmt
+      name: nightly fmt
+      entry: cargo +nightly fmt --all
+      language: system
+      types: [rust]
+      pass_filenames: false
+    - id: check
+      name: cargo check
+      entry: cargo check --all-features
+      language: system
+      types: [rust]
+      pass_filenames: false
+    - id: clippy
+      name: clippy
+      entry: cargo clippy --fix --allow-staged --allow-dirty --all-features -- -D warnings
+      language: system
+      types: [rust]
+      pass_filenames: false
