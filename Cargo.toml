@@ -1,5 +1,5 @@
 [workspace]
-members = ["bin/shadow-cli", "crates/tracing", "crates/config", "crates/fetch", "crates/common", "crates/compile", "crates/init"]
+members = ["bin/shadow-cli", "crates/tracing", "crates/config", "crates/fetch", "crates/common", "crates/compile", "crates/init", "crates/push"]
 default-members = ["bin/shadow-cli"]
 
 # Explicitly set the resolver to version 2, which is the default for packages with edition >= 2021
@@ -108,6 +108,7 @@ shadow-etherscan-fetch = { path = "crates/fetch" }
 shadow-common = { path = "crates/common" }
 shadow-compile = { path = "crates/compile" }
 shadow-init = { path = "crates/init" }
+shadow-push = { path = "crates/push" }
 
 # Crates.io
 clap = { version = "4", features = ["derive"] }

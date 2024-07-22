@@ -8,6 +8,8 @@ use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::ShadowContractInfo;
+
 /// Contains the initial, default README.md file for a contract group
 pub const DEFAULT_README: &str = include_str!("../../templates/README.md");
 
@@ -24,6 +26,9 @@ pub struct ShadowContractGroupInfo {
     pub creation_date: DateTime<Utc>,
     /// A list of contracts in the contract group
     pub contracts: Vec<ShadowContractEntry>,
+    /// Path to the contract group root
+    #[serde(skip)]
+    root: PathBuf,
 }
 
 /// A single contract in a contract group
@@ -35,6 +40,12 @@ pub struct ShadowContractEntry {
     pub chain_id: u64,
 }
 
+impl From<ShadowContractInfo> for ShadowContractEntry {
+    fn from(info: ShadowContractInfo) -> Self {
+        Self { address: info.address, chain_id: info.chain_id }
+    }
+}
+
 impl Default for ShadowContractGroupInfo {
     fn default() -> Self {
         Self {
@@ -42,6 +53,7 @@ impl Default for ShadowContractGroupInfo {
             creator: None,
             creation_date: Utc::now(),
             contracts: vec![],
+            root: PathBuf::new(),
         }
     }
 }
@@ -52,7 +64,9 @@ impl ShadowContractGroupInfo {
     pub fn from_path(path: &PathBuf) -> Result<Self> {
         let info_file = path.join("info.json");
         let info_json = std::fs::read_to_string(info_file)?;
-        let info: Self = serde_json::from_str(&info_json)?;
+        let mut info: Self = serde_json::from_str(&info_json)?;
+
+        info.root = path.clone();
 
         Ok(info)
     }
@@ -75,5 +89,31 @@ impl ShadowContractGroupInfo {
         std::fs::write(readme_file, DEFAULT_README)?;
 
         Ok(group_folder)
+    }
+
+    /// Updates the group's contracts by scanning the contracts directory
+    /// for new contracts
+    pub fn update_contracts(&mut self) -> Result<()> {
+        // walk the directory recursively. We only care about `info.json` files
+        self.contracts = walkdir::WalkDir::new(&self.root)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().ends_with("info.json"))
+            .into_iter()
+            .filter(|e| e.path() != self.root.join("info.json"))
+            .map(|e| {
+                let contract_info: ShadowContractInfo =
+                    serde_json::from_str(&std::fs::read_to_string(e.path())?)?;
+
+                Ok(contract_info.into())
+            })
+            .collect::<Result<Vec<ShadowContractEntry>>>()?;
+
+        // write the updated info.json
+        let info_file = self.root.join("info.json");
+        let info_json = serde_json::to_string_pretty(self)?;
+        std::fs::write(info_file, info_json)?;
+
+        Ok(())
     }
 }

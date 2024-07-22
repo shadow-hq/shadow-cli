@@ -3938,6 +3938,7 @@ dependencies = [
  "shadow-config",
  "shadow-etherscan-fetch",
  "shadow-init",
+ "shadow-push",
  "shadow-tracing",
  "tokio",
  "tracing",
@@ -4022,6 +4023,26 @@ dependencies = [
 
 [[package]]
 name = "shadow-init"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-chains",
+ "chrono",
+ "clap",
+ "envy",
+ "eyre",
+ "foundry-block-explorers",
+ "serde",
+ "serde_json",
+ "shadow-common",
+ "tempdir",
+ "tokio",
+ "tracing",
+ "which",
+]
+
+[[package]]
+name = "shadow-push"
 version = "0.1.0"
 dependencies = [
  "alloy",

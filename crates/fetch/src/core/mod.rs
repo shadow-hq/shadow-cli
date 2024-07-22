@@ -9,7 +9,6 @@ use shadow_common::{
     ShadowContractSource,
 };
 use tracing::{error, info, trace, warn};
-use which::Path;
 
 /// The `fetch` subcommand. Fetches a contract's source code and metadata from Etherscan, and
 /// saves it locally.
@@ -80,7 +79,7 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
 
     // check if this is part of a shadow contract group
     let mut output_dir = PathBuf::from_str(&args.root)?;
-    let group_info = match ShadowContractGroupInfo::from_path(&output_dir) {
+    let mut group_info = match ShadowContractGroupInfo::from_path(&output_dir) {
         Ok(group_info) => {
             // we need to update the output path under `output_dir/chain_id/contract_address`
             output_dir.push(chain.id().to_string());
@@ -154,6 +153,11 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
 
     // compile
     compiler::compile(&output_dir, &settings, &info)?;
+
+    // update shadow contract group info
+    if let Some(group_info) = group_info.as_mut() {
+        group_info.update_contracts()?;
+    }
 
     Ok(())
 }

@@ -3,6 +3,7 @@ use shadow_compile::CompileArgs;
 use shadow_config::ConfigArgs;
 use shadow_etherscan_fetch::FetchArgs;
 use shadow_init::InitArgs;
+use shadow_push::PushArgs;
 
 use shadow_tracing::{
     tracing_subscriber::filter::Directive, FileWorkerGuard, LayerInfo, LogFormat, ShadowTracer,
@@ -166,4 +167,6 @@ pub(crate) enum Subcommands {
         about = "Initialize a new shadow contract group which may be pinned to IPFS"
     )]
     Init(InitArgs),
+    #[clap(name = "push", about = "Compiles and uploads/pins a shadow contract group to IPFS")]
+    Push(PushArgs),
 }

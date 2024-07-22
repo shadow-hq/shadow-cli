@@ -20,6 +20,7 @@ async fn main() -> Result<()> {
         Subcommands::Fetch(subargs) => shadow_etherscan_fetch::fetch(subargs).await?,
         Subcommands::Compile(subargs) => shadow_compile::compile(subargs).await?,
         Subcommands::Init(subargs) => shadow_init::init(subargs).await?,
+        Subcommands::Push(subargs) => shadow_push::push(subargs).await?,
     };
 
     Ok(())
