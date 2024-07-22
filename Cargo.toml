@@ -146,3 +146,5 @@ revm = { git = "https://github.com/bluealloy/revm", tag = "v40", default-feature
 ]  }
 ethers-solc = "2.0.14"
 toml = "0.8.15"
+rayon = "1.10.0"
+hex = "0.4.3"

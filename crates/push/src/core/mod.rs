@@ -36,5 +36,8 @@ pub async fn push(args: PushArgs) -> Result<()> {
     // update the group_info
     group_info.update_contracts()?;
 
+    // prepare the group for pinning
+    group_info.prepare()?;
+
     Ok(())
 }

@@ -24,7 +24,7 @@ pub struct ShadowContractInfo {
     pub chain_id: u64,
     /// Source of the contract information
     pub source: String,
-    /// Unique events not part of the original contract
+    /// Number of unique events emitted by the contract
     #[serde(rename = "uniqueEvents")]
     pub unique_events: u64,
 }
@@ -44,9 +44,16 @@ impl ShadowContractInfo {
             network: chain.named().expect("invalid chain").to_string(),
             chain_id: chain.id(),
             source: "etherscan".to_string(),
-            unique_events: 0, /* This is directly from mainnet, so there are no additional
-                               * non-canonical events */
+            unique_events: 0,
         }
+    }
+
+    /// Creates a new instance of [`ShadowContractInfo`] from the provided
+    /// path to an info.json file
+    pub fn from_path(path: &PathBuf) -> Result<Self> {
+        let info = std::fs::read_to_string(path)?;
+        let info: Value = serde_json::from_str(&info)?;
+        Ok(serde_json::from_value(info)?)
     }
 }
 
@@ -238,5 +245,13 @@ solc_version = "{}"
         std::fs::write(&config_path, &config)?;
 
         Ok(())
+    }
+
+    /// Creates a new instance of [`ShadowContractSettings`] from the provided
+    /// settings.json file
+    pub fn from_path(settings_file: &PathBuf) -> Result<Self> {
+        let settings = std::fs::read_to_string(settings_file)?;
+        let settings: ShadowContractSettings = serde_json::from_str(&settings)?;
+        Ok(settings)
     }
 }

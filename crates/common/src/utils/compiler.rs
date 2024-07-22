@@ -42,7 +42,7 @@ pub fn compile(
     root: &PathBuf,
     settings: &ShadowContractSettings,
     metadata: &ShadowContractInfo,
-) -> Result<Bytes> {
+) -> Result<CompilerOutput> {
     // run `forge build` to compile the contract
     let build_artifact_dir = root.join("out");
     if !build_artifact_dir.exists() {
@@ -102,16 +102,10 @@ pub fn compile(
         .ok_or_else(|| eyre!("bytecode is not a string"))?
         .to_owned();
 
-    let compiler_output = CompilerOutput {
-        abi: serde_json::from_value(compiler_aritfacts["abi"].clone())?,
-        method_identifiers: compiler_aritfacts["methodIdentifiers"].clone(),
-        bytecode: Bytes::from_hex(initcode)?,
-    };
-
     // 2. simulate a deploy w/ the original settings and deployer
     let original_deployer = RevmAddress::from(metadata.contract_deployer);
     let original_init_code =
-        construct_init_code(compiler_output.bytecode.clone(), &settings.constructor_arguments);
+        construct_init_code(Bytes::from_hex(initcode)?, &settings.constructor_arguments);
 
     let mut evm = EvmBuilder::default()
         .with_env({
@@ -139,5 +133,11 @@ pub fn compile(
     let result = evm.transact_preverified()?.result;
     let bytecode = result.into_output().ok_or_eyre("no bytecode")?;
 
-    Ok(bytecode)
+    let compiler_output = CompilerOutput {
+        abi: serde_json::from_value(compiler_aritfacts["abi"].clone())?,
+        method_identifiers: compiler_aritfacts["methodIdentifiers"].clone(),
+        bytecode,
+    };
+
+    Ok(compiler_output)
 }

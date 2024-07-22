@@ -3957,6 +3957,8 @@ dependencies = [
  "ethers-solc",
  "eyre",
  "foundry-block-explorers",
+ "hex",
+ "rayon",
  "revm",
  "serde",
  "serde_json",
