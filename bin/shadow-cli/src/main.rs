@@ -6,6 +6,7 @@ pub(crate) mod args;
 use args::{Arguments, Subcommands};
 use clap::Parser;
 use eyre::Result;
+use shadow_config::Configuration;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -15,12 +16,22 @@ async fn main() -> Result<()> {
     // init tracing
     let _ = args.logs.init_tracing();
 
+    // load config
+    let config = Configuration::load()?;
+
     match args.sub {
         Subcommands::Config(subargs) => shadow_config::config(subargs)?,
-        Subcommands::Fetch(subargs) => shadow_etherscan_fetch::fetch(subargs).await?,
         Subcommands::Compile(subargs) => shadow_compile::compile(subargs).await?,
         Subcommands::Init(subargs) => shadow_init::init(subargs).await?,
-        Subcommands::Push(subargs) => shadow_push::push(subargs).await?,
+        Subcommands::Fetch(mut subargs) => {
+            subargs.etherscan_api_key = config.etherscan_api_key;
+            shadow_etherscan_fetch::fetch(subargs).await?
+        }
+        Subcommands::Push(mut subargs) => {
+            subargs.pinata_api_key = config.pinata_api_key;
+            subargs.pinata_secret_api_key = config.pinata_secret_api_key;
+            shadow_push::push(subargs).await?
+        }
     };
 
     Ok(())
