@@ -116,4 +116,13 @@ impl ShadowContractGroupInfo {
 
         Ok(())
     }
+
+    /// Prepares the contract group for pinning to IPFS
+    pub fn prepare(&self) -> Result<()> {
+        // create an `out` directory in the group's root
+        let out_dir = self.root.join("out");
+        std::fs::create_dir_all(&out_dir)?;
+
+        Ok(())
+    }
 }

@@ -42,7 +42,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.76.0
+          toolchain: 1.79.0
           override: true
 
       - uses: Swatinem/rust-cache@v2
@@ -70,7 +70,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.76.0
+          toolchain: 1.79.0
           override: true
 
       - uses: Swatinem/rust-cache@v2
@@ -93,21 +93,15 @@ jobs:
 
       - name: Set GitHub Personal Access Token
         run: git config --global url."https://${{ secrets.GH_PAT }}:@github.com/".insteadOf "https://github.com/"
-      # Needed to compile properly on Ubuntu
-      # https://github.com/rust-lang/rust/issues/25289
+
       - name: Install gcc-multilib
         run: sudo apt update && sudo apt install gcc-multilib llvm-dev pkg-config libclang-dev
 
-      # IMPORTANT: Be careful with updating the toolchain version here. We have run into issues
-      # with even minor upgrades to the latest stable toolchain, so we're pinning 1.76.0 for now.
-      #
-      # It's also important to make sure that this version is the same as the one used in our
-      # Dockerfiles when building the service binaries.
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.76.0
+          toolchain: 1.79.0
           override: true
 
       - uses: Swatinem/rust-cache@v2
@@ -183,7 +177,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.76.0
+          toolchain: 1.79.0
           override: true
           components: clippy
 
