@@ -1,5 +1,4 @@
-use clap::{ArgAction, Args, ValueEnum};
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 use shadow_compile::CompileArgs;
 use shadow_config::ConfigArgs;
 use shadow_etherscan_fetch::FetchArgs;
