@@ -183,29 +183,12 @@ pub struct ShadowContractSettings {
     /// The compiler version used to compile the contract
     #[serde(rename = "compilerVersion")]
     pub compiler_version: String,
-    /// The optimization used
-    #[serde(rename = "optimizationUsed")]
-    pub optimization_used: u64,
-    /// The number of runs
-    pub runs: u64,
     /// The constructor arguments
     #[serde(rename = "constructorArguments")]
     pub constructor_arguments: Vec<u8>,
     /// The EVM version
     #[serde(rename = "evmVersion")]
     pub evm_version: String,
-    /// The library
-    pub library: String,
-    /// The license type
-    #[serde(rename = "licenseType")]
-    pub license_type: String,
-    /// The proxy
-    pub proxy: u64,
-    /// The implementation
-    pub implementation: Option<Address>,
-    /// The swarm source
-    #[serde(rename = "swarmSource")]
-    pub swarm_source: String,
 }
 
 /// Optimizer settings
@@ -241,15 +224,8 @@ impl ShadowContractSettings {
             }),
             libraries: serde_json::json!({}),
             compiler_version: metadata.compiler_version.clone(),
-            optimization_used: metadata.optimization_used,
-            runs: metadata.runs,
             constructor_arguments: metadata.constructor_arguments.to_vec(),
             evm_version: metadata.evm_version.clone(),
-            library: metadata.library.clone(),
-            license_type: metadata.license_type.clone(),
-            proxy: metadata.proxy,
-            implementation: metadata.implementation,
-            swarm_source: metadata.swarm_source.clone(),
         }
     }
 
