@@ -1,6 +1,6 @@
 # shadow-cli
 
-A simple open-souce CLI which can be used to clone, compile and upload shadow contracts to the [Shadow Contract Registry](https://logs.xyz).
+An open-souce CLI which can be used to clone, compile and upload shadow contracts to the decentralized [Shadow Contract Registry](https://logs.xyz).
 
 See our [blog post](https://todo.xyz) for more information.
 
