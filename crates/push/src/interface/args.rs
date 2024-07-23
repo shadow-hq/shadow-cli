@@ -48,7 +48,9 @@ impl SupportedChains {
     /// Get the schema UID for the given chain
     pub fn schema_uid(&self) -> &str {
         match self {
-            SupportedChains::Base => unimplemented!("base schema not deployed"),
+            SupportedChains::Base => {
+                "dae982d91ec2b394679937bab01d873f54bbdaef8a483b9b1a55b8edb1bfc988"
+            }
             SupportedChains::Sepolia => {
                 "dae982d91ec2b394679937bab01d873f54bbdaef8a483b9b1a55b8edb1bfc988"
             }
