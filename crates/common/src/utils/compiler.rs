@@ -38,8 +38,13 @@ pub fn compile(
     compile_contract(root).map_err(|e| eyre!("failed to compile contract {}", e))?;
 
     // find the contract artifact in the build directory
-    let contract_artifact = find_contract_artifact(&build_artifact_dir, &metadata.name)
-        .map_err(|e| eyre!("contract artifact not found: {}", e))?;
+    let (contract_artifact, artifact_path) =
+        find_contract_artifact(&build_artifact_dir, &metadata.name)
+            .map_err(|e| eyre!("contract artifact not found: {}", e))?;
+    let shadow_artifact_path = artifact_path.with_file_name(format!(
+        "{}.shadow.json",
+        artifact_path.file_stem().unwrap().to_str().unwrap()
+    ));
 
     // simulate the contract deployment w/ the original settings and deployer
     // TODO @jon-becker: we might need an anvil fork running if the constructor calls out to other
@@ -52,12 +57,16 @@ pub fn compile(
     let mut evm = EvmBuilder::default().with_env(deployment_env).build();
     let result =
         evm.transact_preverified().map_err(|e| eyre!("failed to deploy contract: {}", e))?.result;
-
-    Ok(CompilerOutput {
+    let compiler_output = CompilerOutput {
         abi: serde_json::from_value(contract_artifact["abi"].clone())?,
         method_identifiers: contract_artifact["methodIdentifiers"].clone(),
         bytecode: result.into_output().ok_or_eyre("no bytecode")?,
-    })
+    };
+
+    // serialize and write the shadow artifact
+    std::fs::write(shadow_artifact_path, serde_json::to_string_pretty(&compiler_output)?)?;
+
+    Ok(compiler_output)
 }
 
 /// Construct the init code for the contract by concatenating the new contract
@@ -101,7 +110,10 @@ fn compile_contract(root: &PathBuf) -> Result<()> {
 }
 
 /// Find the contract artifact in the build artifact directory
-fn find_contract_artifact(build_artifact_dir: &Path, contract_name: &str) -> Result<Value> {
+fn find_contract_artifact(
+    build_artifact_dir: &Path,
+    contract_name: &str,
+) -> Result<(Value, PathBuf)> {
     // find all artifacts in the build artifact directory
     let mut files = Vec::new();
     let walker = walkdir::WalkDir::new(build_artifact_dir);
@@ -131,7 +143,7 @@ fn find_contract_artifact(build_artifact_dir: &Path, contract_name: &str) -> Res
     let closest_match = closest_match.ok_or_else(|| eyre!("no contract artifact found"))?;
     let compiler_aritfacts: Value = serde_json::from_reader(std::fs::File::open(closest_match)?)?;
 
-    Ok(compiler_aritfacts)
+    Ok((compiler_aritfacts, closest_match.to_owned()))
 }
 
 /// Builds the EVM environment for the deployment
