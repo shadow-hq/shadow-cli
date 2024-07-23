@@ -21,7 +21,7 @@ cargo install --locked --path bin/shadow-cli --bin shadow
 
 ## Usage
 
-### Creating your first shadow contract
+### Create a shadow contract
 
 Let's start by cloning the WETH shadow contract to a new directory.
 
@@ -43,6 +43,8 @@ function transferFrom(address src, address dst, uint wad) public returns (bool) 
     ...
 }
 ```
+
+---
 
 ### Compiling your shadow contract
 
@@ -70,6 +72,8 @@ WETH9.shadow.json:
 }
 ```
 
+---
+
 ### Create a contract group
 
 In order to upload your shadow contract to the decentralized Shadow Contract Registry, you need to create a contract group. A contract group is a collection of shadow contracts that are related to each other in some way.
@@ -86,7 +90,9 @@ This command will create a new contract group in the current working directory (
 shadow fetch 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --root ./path-to-your-contract-group
 ```
 
-### Uploading your shadow contract
+---
+
+### Uploading your contract group
 
 When you're satisfied with your changes, you can upload your contract group to the Shadow Contract Registry by running the following command:
 
@@ -104,3 +110,16 @@ Note: You must update the contract group's metadata file (`./path-to-your-contra
 
 1. Update the `displayName` field to a human-readable name for your contract group.
 2. Update the `creator` field to your Ethereum address. This address must be the same as the one you use to sign the EAS transaction.
+
+## Getting Help
+
+- Join the [Telegram](https://t.me/shadow_devs) to get help, or
+- Open an issue with the [bug](https://github.com/shadow-hq/shadow-reth/issues/new?assignees=&template=bug.yml)
+
+## Contributing
+
+See our [contributing guidelines](./CONTRIBUTING.md).
+
+## Security
+
+This code has not been audited, and should not be used in any production systems.
