@@ -210,12 +210,12 @@ impl ShadowContractGroupInfo {
         let out_folder = self.write_folder_structure(out_dir)?;
 
         // we need to compile each contract in the group. We can do this in parallel w/ rayon
-        info!("Compiling {} shadow contracts", self.contracts.len());
+        info!("compiling {} shadow contracts", self.contracts.len());
         self.contracts
             .par_iter()
             .map(|contract| contract.compile(&self.root, &out_folder))
             .collect::<Result<Vec<()>>>()?;
-        info!("Compiled all shadow contracts successfully");
+        info!("compiled all shadow contracts successfully");
 
         Ok(out_folder)
     }

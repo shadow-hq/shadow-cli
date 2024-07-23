@@ -29,3 +29,4 @@ alloy.workspace = true
 alloy-chains.workspace = true
 shadow-common.workspace = true
 pinata-sdk.workspace = true
+revm.workspace = true

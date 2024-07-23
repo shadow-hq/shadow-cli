@@ -1,5 +1,85 @@
+use alloy::transports::http::reqwest::Url;
+use alloy_chains::NamedChain;
 use clap::Parser;
 use eyre::{OptionExt, Result};
+use serde::Serialize;
+
+/// supported signers enum
+#[derive(clap::ValueEnum, Clone, Default, Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SignerType {
+    /// Use a private key
+    #[default]
+    PrivateKey,
+    /// Use a keystore file
+    Keystore,
+    /// Use a mnemonic
+    Mnemonic,
+    /// Use ledger hardware wallet
+    Ledger,
+    /// Use a Trezor hardware wallet
+    Trezor,
+    /// Use a Yubikey hardware wallet
+    Yubikey,
+}
+
+/// supported chains enum
+#[derive(clap::ValueEnum, Clone, Default, Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SupportedChains {
+    /// Base
+    #[default]
+    Base,
+    /// Sepolia (testnet)
+    Sepolia,
+}
+
+impl Into<NamedChain> for &SupportedChains {
+    fn into(self) -> NamedChain {
+        match self {
+            SupportedChains::Base => NamedChain::Base,
+            SupportedChains::Sepolia => NamedChain::Sepolia,
+        }
+    }
+}
+
+impl SupportedChains {
+    /// Get the schema UID for the given chain
+    pub fn schema_uid(&self) -> &str {
+        match self {
+            SupportedChains::Base => unimplemented!("base schema not deployed"),
+            SupportedChains::Sepolia => {
+                "dae982d91ec2b394679937bab01d873f54bbdaef8a483b9b1a55b8edb1bfc988"
+            }
+        }
+    }
+
+    /// Get the chain id for the given chain
+    pub fn chain_id(&self) -> u64 {
+        match self {
+            SupportedChains::Base => 8453,
+            SupportedChains::Sepolia => 11155111,
+        }
+    }
+
+    /// Get the public rpc url for the given chain
+    pub fn rpc_url(&self) -> Url {
+        match self {
+            SupportedChains::Base => "https://base-rpc.publicnode.com".parse().expect("valid url"),
+            SupportedChains::Sepolia => {
+                "https://ethereum-sepolia-rpc.publicnode.com".parse().expect("valid url")
+            }
+        }
+    }
+
+    /// Get the explorer url for the given chain
+    pub fn explorer_url(&self) -> String {
+        match self {
+            SupportedChains::Base => "basescan.org".to_string(),
+            SupportedChains::Sepolia => "sepolia.etherscan.io".to_string(),
+        }
+    }
+}
 
 /// Arguments for the `push` subcommand
 #[derive(Debug, Clone, Parser)]
@@ -8,6 +88,10 @@ pub struct PushArgs {
     /// The path to the directory in which to initialize the shadow contract group.
     #[clap(short, long, default_value = ".", required = false)]
     pub root: String,
+
+    /// The type of signer you wish to use when attesting.
+    #[clap(short, long, default_value = "private-key", required = false)]
+    pub signer: SignerType,
 
     /// Your pinata API key, used to pin the shadow contract group to IPFS.
     #[clap(long, required = false, alias = "ipfs-api-key")]
@@ -25,6 +109,10 @@ pub struct PushArgs {
         hide_default_value = true
     )]
     pub ipfs_gateway_url: String,
+
+    /// The chain to use when attesting.
+    #[clap(short, long, default_value = "base", required = false)]
+    pub chain: SupportedChains,
 }
 
 impl PushArgs {

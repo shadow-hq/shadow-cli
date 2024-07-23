@@ -1,10 +1,11 @@
 use std::{path::PathBuf, str::FromStr};
 
+use alloy::primitives::Address;
 use eyre::{eyre, Result};
 use shadow_common::{forge::ensure_forge_installed, ShadowContractGroupInfo};
 use tracing::{error, info};
 
-use crate::{ipfs::pin_shadow_contract_group, PushArgs};
+use crate::{eas::creator_attestation, ipfs::pin_shadow_contract_group, PushArgs};
 
 /// The `push` subcommand. Compiles and uploads/pins a shadow contract group to IPFS.
 pub async fn push(args: PushArgs) -> Result<()> {
@@ -44,7 +45,9 @@ pub async fn push(args: PushArgs) -> Result<()> {
     .map_err(|e| eyre!("Failed to pin shadow contract group to IPFS: {}", e))?;
     info!("pinned shadow contract group to IPFS at {}", pin_result.ipfs_url);
 
-    // TODO @jon-becker: must call out to logs.xyz/pin/{} to pin internally
+    // prompt attestation via EAS
+    let creator_address = group_info.creator.as_ref().unwrap_or(&Address::ZERO);
+    creator_attestation(&pin_result.cid, creator_address, &args.signer, &args.chain).await?;
 
     Ok(())
 }

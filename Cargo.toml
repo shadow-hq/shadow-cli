@@ -1,5 +1,14 @@
 [workspace]
-members = ["bin/shadow-cli", "crates/tracing", "crates/config", "crates/fetch", "crates/common", "crates/compile", "crates/init", "crates/push"]
+members = [
+    "bin/shadow-cli",
+    "crates/tracing",
+    "crates/config",
+    "crates/fetch",
+    "crates/common",
+    "crates/compile",
+    "crates/init",
+    "crates/push"
+]
 default-members = ["bin/shadow-cli"]
 
 # Explicitly set the resolver to version 2, which is the default for packages with edition >= 2021
@@ -130,7 +139,6 @@ envy = "0.4.2"
 which = "6.0.1"
 chrono = { version = "0.4.38", features = ["serde"] }
 tempdir = "0.3.7"
-alloy = "0.2.0"
 alloy-chains = "0.1.23"
 walkdir = "2.5.0"
 strsim = "0.11.1"
@@ -149,3 +157,17 @@ toml = "0.8.15"
 rayon = "1.10.0"
 hex = "0.4.3"
 pinata-sdk = "1.1.0"
+alloy = { version = "0.2.0", features = [
+    "full",
+    "node-bindings",
+    "rpc-types-debug",
+    "rpc-types-trace",
+    "json-rpc",
+    "rpc-client",
+    "signer-aws",
+    "signer-keystore",
+    "signer-ledger",
+    "signer-mnemonic",
+    "signer-trezor",
+    "signer-yubihsm",
+] }
