@@ -6,14 +6,7 @@ See our [blog post](https://todo.xyz) for more information.
 
 ## Installation
 
-You can install the shadow-cli binary by following these steps:
-
-1. Clone this repository
-2. Build and install the shadow-cli binary
-3. Run the shadow-cli binary
-4. Compile the shadow contract
-
-### Clone the repository
+### Clone this repository
 
 ```bash
 git clone https://github.com/shadow-hq/shadow-cli
@@ -26,7 +19,9 @@ cd shadow-cli
 cargo install --locked --path bin/shadow-cli --bin shadow
 ```
 
-### Create your first shadow contract
+## Usage
+
+### Creating your first shadow contract
 
 Let's start by cloning the WETH shadow contract to a new directory.
 
@@ -49,7 +44,7 @@ function transferFrom(address src, address dst, uint wad) public returns (bool) 
 }
 ```
 
-### Compile the shadow contract
+### Compiling your shadow contract
 
 ```bash
 shadow compile --root ./shadow-weth
@@ -74,3 +69,38 @@ WETH9.shadow.json:
   "bytecode": "0x60606040..."
 }
 ```
+
+### Create a contract group
+
+In order to upload your shadow contract to the decentralized Shadow Contract Registry, you need to create a contract group. A contract group is a collection of shadow contracts that are related to each other in some way.
+
+You can simply do this by running the following command:
+
+```bash
+shadow init
+```
+
+This command will create a new contract group in the current working directory (or, you can change the `--root` flag to specify a different directory). You can then add shadow contracts to this group by running the following command:
+
+```bash
+shadow fetch 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --root ./path-to-your-contract-group
+```
+
+### Uploading your shadow contract
+
+When you're satisfied with your changes, you can upload your contract group to the Shadow Contract Registry by running the following command:
+
+```bash
+shadow push --root ./path-to-your-contract-group
+```
+
+This will:
+
+1. Compile all shadow contracts in the contract group.
+2. Uploads the contract group's artifacts to IPFS.
+3. Prompt you to send a transaction to EAS on Base, attesting that you are the owner of the contract group. (optional, although your changes will not be reflected in the Shadow Contract Registry until you do this)
+
+Note: You must update the contract group's metadata file (`./path-to-your-contract-group/info.json`) before you'll be able to push your changes. You must:
+
+1. Update the `displayName` field to a human-readable name for your contract group.
+2. Update the `creator` field to your Ethereum address. This address must be the same as the one you use to sign the EAS transaction.
