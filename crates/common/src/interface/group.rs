@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use alloy::primitives::Address;
 use chrono::{DateTime, Utc};
@@ -50,7 +50,7 @@ impl From<ShadowContractInfo> for ShadowContractEntry {
 
 impl ShadowContractEntry {
     /// Compiles the contract that this entry references
-    pub fn compile(&self, root: &PathBuf, output: &PathBuf) -> Result<()> {
+    pub fn compile(&self, root: &Path, output: &Path) -> Result<()> {
         let start_time = std::time::Instant::now();
 
         // build paths
@@ -122,7 +122,7 @@ impl ShadowContractGroupInfo {
         let info_json = std::fs::read_to_string(info_file)?;
         let mut info: Self = serde_json::from_str(&info_json)?;
 
-        info.root = path.clone();
+        info.root.clone_from(path);
 
         Ok(info)
     }
@@ -156,7 +156,6 @@ impl ShadowContractGroupInfo {
             .filter_map(|e| e.ok())
             .filter(|e| !e.path().starts_with(self.root.join("out")))
             .filter(|e| e.file_name().to_string_lossy().ends_with("info.json"))
-            .into_iter()
             .filter(|e| e.path() != self.root.join("info.json"))
             .map(|e| {
                 let contract_info: ShadowContractInfo =

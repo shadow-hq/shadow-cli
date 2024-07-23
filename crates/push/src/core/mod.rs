@@ -10,7 +10,7 @@ use crate::{eas::creator_attestation, ipfs::pin_shadow_contract_group, PushArgs}
 /// The `push` subcommand. Compiles and uploads/pins a shadow contract group to IPFS.
 pub async fn push(args: PushArgs) -> Result<()> {
     // ensure forge is installed on the system
-    let _ = ensure_forge_installed()?;
+    ensure_forge_installed()?;
 
     // ensure args are valid
     args.validate().map_err(|e| eyre!("Invalid arguments: {}", e))?;

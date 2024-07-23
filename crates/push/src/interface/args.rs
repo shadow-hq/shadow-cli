@@ -2,6 +2,7 @@ use alloy::transports::http::reqwest::Url;
 use alloy_chains::NamedChain;
 use clap::Parser;
 use eyre::{OptionExt, Result};
+use revm::primitives::{address, Address};
 use serde::Serialize;
 
 /// supported signers enum
@@ -34,9 +35,9 @@ pub enum SupportedChains {
     Sepolia,
 }
 
-impl Into<NamedChain> for &SupportedChains {
-    fn into(self) -> NamedChain {
-        match self {
+impl From<&SupportedChains> for NamedChain {
+    fn from(val: &SupportedChains) -> Self {
+        match val {
             SupportedChains::Base => NamedChain::Base,
             SupportedChains::Sepolia => NamedChain::Sepolia,
         }
@@ -51,6 +52,14 @@ impl SupportedChains {
             SupportedChains::Sepolia => {
                 "dae982d91ec2b394679937bab01d873f54bbdaef8a483b9b1a55b8edb1bfc988"
             }
+        }
+    }
+
+    /// Get the EAS address for the given chain
+    pub fn eas_address(&self) -> Address {
+        match self {
+            SupportedChains::Base => unimplemented!("4200000000000000000000000000000000000021"),
+            SupportedChains::Sepolia => address!("C2679fBD37d54388Ce493F1DB75320D236e1815e"),
         }
     }
 

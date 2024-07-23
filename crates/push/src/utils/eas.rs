@@ -17,7 +17,7 @@ use alloy::{
     sol,
 };
 use eyre::{bail, eyre, OptionExt, Result};
-use revm::primitives::{address, Address, Bytes, FixedBytes, U256};
+use revm::primitives::{Address, Bytes, FixedBytes, U256};
 use tracing::{debug, error, info, trace, warn};
 use EAS::{AttestationRequest, AttestationRequestData};
 
@@ -62,7 +62,7 @@ pub(crate) async fn creator_attestation(
         .on_http(chain.rpc_url());
 
     // Get the contract instance
-    let eas = EAS::new(address!("C2679fBD37d54388Ce493F1DB75320D236e1815e"), provider.clone());
+    let eas = EAS::new(chain.eas_address(), provider.clone());
     let req = AttestationRequest {
         schema: chain.schema_uid().parse()?,
         data: AttestationRequestData {
@@ -83,7 +83,7 @@ pub(crate) async fn creator_attestation(
 
     // Prompt the user to confirm the attestation
     if prompt("You are about to sign an EAS attestation. Would you like to continue? (y/N): ")?
-        .unwrap_or("n".to_string())
+        .unwrap_or_else(|| "n".to_string())
         .as_str() !=
         "y"
     {
@@ -111,27 +111,27 @@ async fn get_signer(signer_method: &SignerType, chain: &SupportedChains) -> Resu
             let private_key = prompt("Enter your private key (or Enter to skip): ")?
                 .ok_or_eyre("user skipping EAS attestation")?;
             let signer = PrivateKeySigner::from_bytes(
-                &FixedBytes::<32>::from_hex(&private_key)
+                &FixedBytes::<32>::from_hex(private_key)
                     .map_err(|e| eyre!("invalid private key: {}", e))?,
             )
             .map_err(|e| eyre!("failed to create signer: {}", e))?;
-            return Ok(EthereumWallet::from(signer));
+            Ok(EthereumWallet::from(signer))
         }
         SignerType::Mnemonic => {
             let mnemonic = prompt("Enter your mnemonic (or Enter to skip): ")?
                 .ok_or_eyre("user skipping EAS attestation")?;
             let derivation_path = prompt("Enter your derivation path (m/44'/60'/0'/0/0): ")?
-                .unwrap_or("m/44'/60'/0'/0/0".to_string());
+                .unwrap_or_else(|| "m/44'/60'/0'/0/0".to_string());
             let signer = MnemonicBuilder::<English>::default()
                 .phrase(mnemonic)
                 .derivation_path(derivation_path)?
                 .build()
                 .map_err(|e| eyre!("failed to create wallet: {}", e))?;
-            return Ok(EthereumWallet::from(signer));
+            Ok(EthereumWallet::from(signer))
         }
         SignerType::Ledger => {
             let hdpath = prompt("Enter your HDPath (0): ")?
-                .unwrap_or("0".to_string())
+                .unwrap_or_else(|| "0".to_string())
                 .parse::<usize>()
                 .map_err(|e| eyre!("invalid HDPath: {}", e))?;
 
@@ -140,11 +140,11 @@ async fn get_signer(signer_method: &SignerType, chain: &SupportedChains) -> Resu
                 Some(chain.chain_id()),
             )
             .await?;
-            return Ok(EthereumWallet::from(signer));
+            Ok(EthereumWallet::from(signer))
         }
         SignerType::Trezor => {
             let hdpath = prompt("Enter your HDPath (0): ")?
-                .unwrap_or("0".to_string())
+                .unwrap_or_else(|| "0".to_string())
                 .parse::<usize>()
                 .map_err(|e| eyre!("invalid HDPath: {}", e))?;
 
@@ -153,12 +153,12 @@ async fn get_signer(signer_method: &SignerType, chain: &SupportedChains) -> Resu
                 Some(chain.chain_id()),
             )
             .await?;
-            return Ok(EthereumWallet::from(signer));
+            Ok(EthereumWallet::from(signer))
         }
         SignerType::Yubikey => {
             let connector = Connector::usb(&UsbConfig::default());
             let signer = YubiSigner::connect(connector, Credentials::default(), 0);
-            return Ok(EthereumWallet::from(signer));
+            Ok(EthereumWallet::from(signer))
         }
         SignerType::Keystore => {
             let keystore = prompt("Enter the path to your keystore file (or Enter to skip): ")?
@@ -166,7 +166,7 @@ async fn get_signer(signer_method: &SignerType, chain: &SupportedChains) -> Resu
             let password = prompt("Enter your keystore password: ")?
                 .ok_or_eyre("user skipping EAS attestation")?;
             let signer = LocalSigner::decrypt_keystore(keystore, password)?;
-            return Ok(EthereumWallet::from(signer));
+            Ok(EthereumWallet::from(signer))
         }
     }
 }

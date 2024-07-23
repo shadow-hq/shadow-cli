@@ -7,7 +7,7 @@ use revm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{ShadowContractInfo, ShadowContractSettings};
 
@@ -35,7 +35,7 @@ pub fn compile(
     std::fs::create_dir_all(&build_artifact_dir)?;
 
     // compile via forge
-    let _ = compile_contract(root).map_err(|e| eyre!("failed to compile contract {}", e))?;
+    compile_contract(root).map_err(|e| eyre!("failed to compile contract {}", e))?;
 
     // find the contract artifact in the build directory
     let contract_artifact = find_contract_artifact(&build_artifact_dir, &metadata.name)
@@ -44,10 +44,9 @@ pub fn compile(
     // simulate the contract deployment w/ the original settings and deployer
     // TODO @jon-becker: we might need an anvil fork running if the constructor calls out to other
     // contracts
-    let original_deployer = RevmAddress::from(metadata.contract_deployer);
     let initcode = construct_init_code(&contract_artifact, &settings.constructor_arguments)
         .map_err(|e| eyre!("failed to construct init code: {}", e))?;
-    let deployment_env = build_deployment_env(original_deployer, initcode);
+    let deployment_env = build_deployment_env(metadata.contract_deployer, initcode);
 
     // execute the deployment transaction
     let mut evm = EvmBuilder::default().with_env(deployment_env).build();
@@ -74,8 +73,7 @@ fn construct_init_code(
             .get("object")
             .ok_or_else(|| eyre!("no bytecode object found"))?
             .as_str()
-            .ok_or_else(|| eyre!("bytecode is not a string"))?
-            .to_owned(),
+            .ok_or_else(|| eyre!("bytecode is not a string"))?,
     )?;
 
     let mut init_code = new_contract_bytecode.to_vec();
@@ -103,10 +101,10 @@ fn compile_contract(root: &PathBuf) -> Result<()> {
 }
 
 /// Find the contract artifact in the build artifact directory
-fn find_contract_artifact(build_artifact_dir: &PathBuf, contract_name: &str) -> Result<Value> {
+fn find_contract_artifact(build_artifact_dir: &Path, contract_name: &str) -> Result<Value> {
     // find all artifacts in the build artifact directory
     let mut files = Vec::new();
-    let walker = walkdir::WalkDir::new(build_artifact_dir.as_path());
+    let walker = walkdir::WalkDir::new(build_artifact_dir);
     for entry in walker {
         let entry = match entry {
             Ok(entry) => entry,
@@ -122,7 +120,7 @@ fn find_contract_artifact(build_artifact_dir: &PathBuf, contract_name: &str) -> 
     let mut closest_distance = usize::MAX;
     for file in &files {
         let file_stem = file.file_stem().unwrap().to_string_lossy();
-        let distance = strsim::levenshtein(&contract_name, &file_stem);
+        let distance = strsim::levenshtein(contract_name, &file_stem);
         if distance < closest_distance {
             closest_distance = distance;
             closest_match = Some(file);
@@ -143,7 +141,7 @@ fn build_deployment_env(original_deployer: RevmAddress, initcode: Bytes) -> Box<
     cfg_env.chain_id = 1u64;
     cfg_env.perf_analyse_created_bytecodes = AnalysisKind::Raw;
     Box::new(Env {
-        cfg: cfg_env.clone(),
+        cfg: cfg_env,
         tx: TxEnv {
             caller: original_deployer,
             gas_price: U256::from(1),
@@ -154,6 +152,5 @@ fn build_deployment_env(original_deployer: RevmAddress, initcode: Bytes) -> Box<
             ..Default::default()
         },
         block: BlockEnv { number: U256::from(4470000), ..Default::default() },
-        ..Default::default()
     })
 }

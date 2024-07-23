@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use alloy::primitives::Address;
 use alloy_chains::Chain;
@@ -109,7 +109,7 @@ impl ShadowContractSource {
     }
 
     /// Builds the source directory
-    pub fn write_source_to(&self, src_root: &PathBuf) -> Result<()> {
+    pub fn write_source_to(&self, src_root: &Path) -> Result<()> {
         // create the source directory
         let src_dir = src_root.join("src");
         std::fs::create_dir_all(&src_dir)?;
@@ -148,7 +148,7 @@ impl ShadowContractSource {
             },
             compiler_version: contract_settings.compiler_version.to_owned(),
             // walk the contract directory and collect all .sol and .vy files
-            contract_files: walkdir::WalkDir::new(&path)
+            contract_files: walkdir::WalkDir::new(path)
                 .into_iter()
                 .filter_map(|e| e.ok())
                 .filter(|e| {
@@ -160,7 +160,7 @@ impl ShadowContractSource {
                     let path = e.path();
                     let contents = std::fs::read_to_string(path)?;
                     Ok(ShadowContractSourceFile {
-                        file_name: path.strip_prefix(&path)?.to_string_lossy().to_string(),
+                        file_name: path.strip_prefix(path)?.to_string_lossy().to_string(),
                         content: contents,
                     })
                 })
@@ -248,24 +248,24 @@ impl ShadowContractSettings {
             library: metadata.library.clone(),
             license_type: metadata.license_type.clone(),
             proxy: metadata.proxy,
-            implementation: metadata.implementation.clone(),
+            implementation: metadata.implementation,
             swarm_source: metadata.swarm_source.clone(),
         }
     }
 
     /// Writes the settings to a `foundry.toml` configuration file
     /// TODO @jon-becker: Eventually use the toml crate for this
-    pub fn generate_config(&self, src_root: &PathBuf) -> Result<()> {
+    pub fn generate_config(&self, src_root: &Path) -> Result<()> {
         let config_path = src_root.join("foundry.toml");
         let config = format!(
             "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"",
             self.optimizer.enabled,
             self.optimizer.runs,
-            self.compiler_version.strip_prefix("v").unwrap_or(&self.compiler_version)
+            self.compiler_version.strip_prefix('v').unwrap_or(&self.compiler_version)
         );
 
         // overwrite `foundry.toml` if it already exists
-        std::fs::write(&config_path, &config)?;
+        std::fs::write(config_path, config)?;
 
         Ok(())
     }

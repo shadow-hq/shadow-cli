@@ -14,7 +14,7 @@ use tracing::{error, info, trace, warn};
 /// saves it locally.
 pub async fn fetch(args: FetchArgs) -> Result<()> {
     // ensure forge is installed on the system
-    let _ = ensure_forge_installed()?;
+    ensure_forge_installed()?;
 
     let chain: Chain = args.clone().try_into()?;
     trace!("using chain: {} ({})", chain, chain.id());
@@ -57,7 +57,7 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     info!("writing contract to {}", output_dir.display());
 
     // initialize foundry project structure
-    let _ = init_via_forge(&output_dir)
+    init_via_forge(&output_dir)
         .map_err(|e| eyre!("failed to initialize foundry project: {}", e))?;
 
     // create directories

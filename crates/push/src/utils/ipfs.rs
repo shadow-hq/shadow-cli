@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use eyre::{eyre, Result};
 use pinata_sdk::{PinByFile, PinataApi};
@@ -14,7 +14,7 @@ pub(crate) struct PinResult {
 
 /// Pins the provided
 pub(crate) async fn pin_shadow_contract_group(
-    path: &PathBuf,
+    path: &Path,
     api_key: &str,
     secret_api_key: &str,
     base_gateway_url: &str,
@@ -22,7 +22,7 @@ pub(crate) async fn pin_shadow_contract_group(
     let api = PinataApi::new(api_key, secret_api_key)
         .map_err(|e| eyre!("Failed to create Pinata API client: {}", e))?;
     let result = api
-        .pin_file(PinByFile::new(format!("{}/", path.to_string_lossy().to_string())))
+        .pin_file(PinByFile::new(format!("{}/", path.to_string_lossy())))
         .await
         .map_err(|e| eyre!("Failed to pin file: {}", e))?;
 

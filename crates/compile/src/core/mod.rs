@@ -10,7 +10,7 @@ use tracing::info;
 /// The `compile` subcommand. Compiles a shadowed contract with the original contract settings.
 pub async fn compile(args: CompileArgs) -> Result<()> {
     // ensure forge is installed on the system
-    let _ = ensure_forge_installed()?;
+    ensure_forge_installed()?;
 
     let root_dir = PathBuf::from_str(&args.root)?;
     let settings_path = root_dir.join("settings.json");

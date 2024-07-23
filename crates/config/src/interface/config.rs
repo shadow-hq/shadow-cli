@@ -6,7 +6,7 @@ use eyre::{eyre, OptionExt, Result};
 use serde::{Deserialize, Serialize};
 
 /// The [`Configuration`] struct represents the configuration of the CLI.
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Configuration {
     /// The API key to use for Etherscan interactions.
     pub etherscan_api_key: Option<String>,
@@ -18,18 +18,6 @@ pub struct Configuration {
     pub pinata_secret_api_key: Option<String>,
     /// The wallet address to use for signing and attestations.
     pub wallet_address: Option<String>,
-}
-
-impl Default for Configuration {
-    fn default() -> Self {
-        Self {
-            etherscan_api_key: None,
-            ipfs_gateway_url: None,
-            pinata_api_key: None,
-            pinata_secret_api_key: None,
-            wallet_address: None,
-        }
-    }
 }
 
 #[allow(deprecated)]
