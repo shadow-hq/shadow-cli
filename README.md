@@ -110,6 +110,7 @@ Note: You must update the contract group's metadata file (`./path-to-your-contra
 
 1. Update the `displayName` field to a human-readable name for your contract group.
 2. Update the `creator` field to your Ethereum address. This address must be the same as the one you use to sign the EAS transaction.
+3. Update the `README.md` file to include a description of your contract group.
 
 ## Getting Help
 
