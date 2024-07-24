@@ -157,10 +157,11 @@ impl ShadowContractSource {
                         e.file_type().is_file()
                 })
                 .map(|e| {
-                    let path = e.path();
-                    let contents = std::fs::read_to_string(path)?;
+                    let file_path = e.path();
+                    let contents = std::fs::read_to_string(file_path)?;
+
                     Ok(ShadowContractSourceFile {
-                        file_name: path.strip_prefix(path)?.to_string_lossy().to_string(),
+                        file_name: file_path.strip_prefix(path)?.to_string_lossy().to_string(),
                         content: contents,
                     })
                 })
