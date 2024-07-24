@@ -60,7 +60,7 @@ impl SupportedChains {
     /// Get the EAS address for the given chain
     pub fn eas_address(&self) -> Address {
         match self {
-            SupportedChains::Base => unimplemented!("4200000000000000000000000000000000000021"),
+            SupportedChains::Base => address!("4200000000000000000000000000000000000021"),
             SupportedChains::Sepolia => address!("C2679fBD37d54388Ce493F1DB75320D236e1815e"),
         }
     }
