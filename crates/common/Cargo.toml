@@ -35,3 +35,5 @@ rayon.workspace = true
 hex.workspace = true
 which.workspace = true
 alloy.workspace = true
+foundry-compilers.workspace = true
+zip.workspace = true

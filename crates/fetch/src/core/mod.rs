@@ -3,7 +3,7 @@ use std::{path::PathBuf, str::FromStr};
 use crate::FetchArgs;
 use alloy_chains::Chain;
 use eyre::{eyre, Result};
-use foundry_block_explorers::Client;
+use foundry_block_explorers::{contract::Metadata, Client};
 use shadow_common::{
     compiler, forge::ensure_forge_installed, ShadowContractGroupInfo, ShadowContractInfo,
     ShadowContractSettings, ShadowContractSource,
@@ -50,7 +50,7 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     let metadata = client.contract_source_code(address).await?;
     let creation_data = client.contract_creation_data(address).await?;
     let info = ShadowContractInfo::new(&chain, &metadata, &creation_data);
-    let source = ShadowContractSource::new(&metadata);
+    let source = ShadowContractSource::new(&metadata)?;
     let settings = ShadowContractSettings::new(&metadata);
 
     info!("successfully fetched contract information from etherscan");
@@ -64,6 +64,7 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     std::fs::create_dir_all(output_dir.clone())?;
     let info_path = output_dir.join("info.json");
     let source_path = output_dir.join("source.json");
+    let original_source_path = output_dir.join("original.json");
     let settings_path = output_dir.join("settings.json");
     let src_dir = output_dir.join("src");
     let test_dir = output_dir.join("test");
@@ -76,8 +77,9 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
 
     // write files
     std::fs::write(info_path, info_json)?;
-    std::fs::write(source_path, source_json)?;
+    std::fs::write(source_path, &source_json)?;
     std::fs::write(settings_path, settings_json)?;
+    std::fs::write(original_source_path, source_json)?;
     std::fs::remove_dir_all(src_dir.clone())?;
     std::fs::remove_dir_all(test_dir.clone())?;
     std::fs::remove_dir_all(script_dir.clone())?;

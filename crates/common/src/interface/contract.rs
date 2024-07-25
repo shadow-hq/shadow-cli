@@ -2,8 +2,9 @@ use std::path::{Path, PathBuf};
 
 use alloy::primitives::Address;
 use alloy_chains::Chain;
-use eyre::Result;
+use eyre::{OptionExt, Result};
 use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
+use foundry_compilers::artifacts::{RelativeRemapping, Remapping};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -65,6 +66,8 @@ pub struct ShadowContractSource {
     pub compiler_version: String,
     /// The language used to write the contract
     pub language: String,
+    /// Remappings used to compile the contract
+    pub remappings: Vec<RelativeRemapping>,
     /// The source code of the contract
     #[serde(rename = "contractFiles")]
     pub contract_files: Vec<ShadowContractSourceFile>,
@@ -83,37 +86,163 @@ pub struct ShadowContractSourceFile {
 impl ShadowContractSource {
     /// Creates a new instance of [`ShadowContractSource`] from the provided
     /// [`ContractMetadata`]
-    pub fn new(metadata: &ContractMetadata) -> Self {
-        Self {
-            compiler_version: metadata
-                .items
-                .first()
-                .expect("no metadata found")
-                .compiler_version
-                .clone(),
-            language: if metadata.items.iter().any(|i| i.compiler_version.starts_with("vyper")) {
+    ///
+    /// Much of this code (for the reorg logic) is taken from `forge clone` \
+    /// https://github.com/foundry-rs/foundry/blob/master/crates/forge/bin/cmd/clone.rs
+    pub fn new(metadata: &ContractMetadata) -> Result<Self> {
+        let metadata = metadata.items.clone().remove(0);
+        let contract_name = metadata.contract_name.clone();
+        let source_tree = metadata.source_tree();
+
+        // get cwd
+        let root = tempdir::TempDir::new("clone")?.into_path();
+        let raw_dir = root.join("raw");
+        let lib_dir = root.join("lib");
+        let src_dir = root.join("src");
+
+        let mut remappings = vec![Remapping {
+            context: None,
+            name: "forge-std".to_string(),
+            path: root.join("lib/forge-std/src").to_string_lossy().to_string(),
+        }];
+
+        // ensure all directories are created
+        std::fs::create_dir_all(&lib_dir)?;
+        std::fs::create_dir_all(&src_dir)?;
+
+        source_tree.write_to(&raw_dir).map_err(|e| eyre::eyre!("failed to dump sources: {}", e))?;
+
+        // check if the source needs reorginazation
+        let needs_reorg = std::fs::read_dir(raw_dir.join(&contract_name))?.all(|e| {
+            let Ok(e) = e else { return false };
+            let folder_name = e.file_name();
+            folder_name == "src" ||
+                folder_name == "lib" ||
+                folder_name == "contracts" ||
+                folder_name == "hardhat" ||
+                folder_name == "forge-std" ||
+                folder_name.to_string_lossy().starts_with('@')
+        });
+
+        // move source files
+        for entry in std::fs::read_dir(raw_dir.join(&contract_name))? {
+            let entry = entry?;
+            let folder_name = entry.file_name();
+            // special handling when we need to re-organize the directories: we flatten them.
+            if needs_reorg {
+                if folder_name == "contracts" || folder_name == "src" || folder_name == "lib" {
+                    // move all sub folders in contracts to src or lib
+                    let new_dir = if folder_name == "lib" { &lib_dir } else { &src_dir };
+                    for e in std::fs::read_dir(entry.path())? {
+                        let e = e?;
+                        let dest = new_dir.join(e.file_name());
+                        eyre::ensure!(
+                            !Path::exists(&dest),
+                            "destination already exists: {:?}",
+                            dest
+                        );
+                        std::fs::rename(e.path(), &dest)?;
+                        remappings.push(Remapping {
+                            context: None,
+                            name: format!(
+                                "{}/{}",
+                                folder_name.to_string_lossy(),
+                                e.file_name().to_string_lossy()
+                            ),
+                            path: dest.to_string_lossy().to_string(),
+                        });
+                    }
+                } else {
+                    assert!(
+                        folder_name == "hardhat" ||
+                            folder_name == "forge-std" ||
+                            folder_name.to_string_lossy().starts_with('@')
+                    );
+                    // move these other folders to lib
+                    let dest = lib_dir.join(&folder_name);
+                    if folder_name == "forge-std" {
+                        // let's use the provided forge-std directory
+                        std::fs::remove_dir_all(&dest)?;
+                    }
+                    eyre::ensure!(!Path::exists(&dest), "destination already exists: {:?}", dest);
+                    std::fs::rename(entry.path(), &dest)?;
+                    remappings.push(Remapping {
+                        context: None,
+                        name: folder_name.to_string_lossy().to_string(),
+                        path: dest.to_string_lossy().to_string(),
+                    });
+                }
+            } else {
+                // directly move the all folders into src
+                let dest = src_dir.join(&folder_name);
+                eyre::ensure!(!Path::exists(&dest), "destination already exists: {:?}", dest);
+                std::fs::rename(entry.path(), &dest)?;
+                if folder_name != "src" {
+                    remappings.push(Remapping {
+                        context: None,
+                        name: folder_name.to_string_lossy().to_string(),
+                        path: dest.to_string_lossy().to_string(),
+                    });
+                }
+            }
+        }
+
+        // delete the raw directory
+        std::fs::remove_dir_all(raw_dir)?;
+
+        // add remappings in the metedata
+        for mut r in metadata.settings()?.remappings {
+            if needs_reorg {
+                // we should update its remapped path in the same way as we dump sources
+                // i.e., remove prefix `contracts` (if any) and add prefix `src`
+                let new_path = if r.path.starts_with("contracts") {
+                    PathBuf::from("src").join(PathBuf::from(&r.path).strip_prefix("contracts")?)
+                } else if r.path.starts_with('@') ||
+                    r.path.starts_with("hardhat/") ||
+                    r.path.starts_with("forge-std/")
+                {
+                    PathBuf::from("lib").join(PathBuf::from(&r.path))
+                } else {
+                    PathBuf::from(&r.path)
+                };
+                r.path = new_path.to_string_lossy().to_string();
+                remappings.push(r);
+            } else {
+                remappings.push(r);
+            }
+        }
+
+        Ok(Self {
+            compiler_version: metadata.compiler_version.clone(),
+            language: if metadata.is_vyper() {
                 "Vyper".to_string()
             } else {
                 "Solidity".to_string()
             },
-            contract_files: metadata
-                .source_tree()
-                .entries
-                .iter()
-                .map(|e| ShadowContractSourceFile {
-                    file_name: e.path.to_str().expect("invalid path").to_string(),
-                    content: e.contents.clone(),
+            remappings: remappings.into_iter().map(|r| r.into_relative(&root)).collect(),
+            contract_files: walkdir::WalkDir::new(&root)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    (e.file_name().to_string_lossy().ends_with(".sol") ||
+                        e.file_name().to_string_lossy().ends_with(".vy")) &&
+                        e.file_type().is_file()
                 })
-                .collect(),
-        }
+                .map(|e| {
+                    let file_path = e.path();
+                    let contents = std::fs::read_to_string(file_path)?;
+
+                    Ok(ShadowContractSourceFile {
+                        file_name: file_path.strip_prefix(&root)?.to_string_lossy().to_string(),
+                        content: contents,
+                    })
+                })
+                .collect::<Result<Vec<ShadowContractSourceFile>>>()?,
+        })
     }
 
     /// Builds the source directory
-    pub fn write_source_to(&self, src_root: &Path) -> Result<()> {
-        // create the source directory
-        let src_dir = src_root.join("src");
-        std::fs::create_dir_all(&src_dir)?;
-
+    pub fn write_source_to(&self, src_dir: &Path) -> Result<()> {
         // write the source files
         for file in self.contract_files.iter() {
             // if the file name doesnt have .sol or .vy extension, add it
@@ -133,6 +262,12 @@ impl ShadowContractSource {
             std::fs::write(&file_path, &file.content)?;
         }
 
+        // write remappings.txt
+        let remappings_path = src_dir.join("remappings.txt");
+        let remappings =
+            self.remappings.iter().map(|r| r.to_string()).collect::<Vec<String>>().join("\n");
+        std::fs::write(&remappings_path, remappings)?;
+
         Ok(())
     }
 
@@ -147,6 +282,7 @@ impl ShadowContractSource {
                 "Solidity".to_string()
             },
             compiler_version: contract_settings.compiler_version.to_owned(),
+            remappings: vec![],
             // walk the contract directory and collect all .sol and .vy files
             contract_files: walkdir::WalkDir::new(path)
                 .into_iter()

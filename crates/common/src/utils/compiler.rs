@@ -1,3 +1,4 @@
+use crate::{ShadowContractInfo, ShadowContractSettings};
 use alloy::hex::FromHex;
 use alloy_json_abi::JsonAbi;
 use eyre::{eyre, OptionExt, Result};
@@ -8,8 +9,7 @@ use revm::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-
-use crate::{ShadowContractInfo, ShadowContractSettings};
+use tracing::error;
 
 /// Compiler Output
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -35,7 +35,7 @@ pub fn compile(
     std::fs::create_dir_all(&build_artifact_dir)?;
 
     // compile via forge
-    compile_contract(root).map_err(|e| eyre!("failed to compile contract {}", e))?;
+    compile_contract(root).map_err(|e| eyre!("failed to compile: {}", e))?;
 
     // find the contract artifact in the build directory
     let (contract_artifact, artifact_path) =
@@ -98,12 +98,14 @@ fn compile_contract(root: &PathBuf) -> Result<()> {
         .arg("--force")
         .arg("--no-cache")
         .current_dir(root)
-        .stderr(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        eyre::bail!("forge build failed: {}", stderr);
+        error!("{}", stderr);
+
+        eyre::bail!("build failed");
     }
 
     Ok(())
