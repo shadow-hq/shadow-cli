@@ -29,10 +29,10 @@ impl Configuration {
         config_path.push("config.json");
 
         if !config_path.exists() {
-            return Err(eyre!(
-                "configuration does not exist at {:?}. If this is your first time using the Shadow CLI, try `shadow config --interactive`",
-                config_path
-            ));
+            // write it
+            let config = Configuration::default();
+            let config = serde_json::to_string_pretty(&config)?;
+            std::fs::write(&config_path, config)?;
         }
 
         let config = std::fs::read_to_string(config_path)?;
