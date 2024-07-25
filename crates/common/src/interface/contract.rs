@@ -91,7 +91,6 @@ impl ShadowContractSource {
     /// https://github.com/foundry-rs/foundry/blob/master/crates/forge/bin/cmd/clone.rs
     pub fn new(metadata: &ContractMetadata) -> Result<Self> {
         let metadata = metadata.items.clone().remove(0);
-        let contract_name = metadata.contract_name.to_string();
         let source_tree = metadata.source_tree();
 
         // get cwd
@@ -113,7 +112,7 @@ impl ShadowContractSource {
         source_tree.write_to(&raw_dir).map_err(|e| eyre::eyre!("failed to dump sources: {}", e))?;
 
         // check if the source needs reorginazation
-        let needs_reorg = std::fs::read_dir(raw_dir.join(&contract_name))?.all(|e| {
+        let needs_reorg = std::fs::read_dir(raw_dir.join(&metadata.contract_name))?.all(|e| {
             let Ok(e) = e else { return false };
             let folder_name = e.file_name();
             folder_name == "src" ||
@@ -125,7 +124,7 @@ impl ShadowContractSource {
         });
 
         // move source files
-        for entry in std::fs::read_dir(raw_dir.join(&contract_name))? {
+        for entry in std::fs::read_dir(raw_dir.join(&metadata.contract_name))? {
             let entry = entry?;
             let folder_name = entry.file_name();
             // special handling when we need to re-organize the directories: we flatten them.
