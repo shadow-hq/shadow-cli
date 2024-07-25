@@ -59,6 +59,7 @@ impl ShadowContractEntry {
         let contract_info_path = contract_path.join("info.json");
         let contract_settings_path = contract_path.join("settings.json");
         let contract_src_path = contract_path.join("src");
+        let contract_original_source_path = contract_path.join("original.json");
 
         let contract_output_path =
             output.join(self.chain_id.to_string()).join(self.address.to_string().to_lowercase());
@@ -67,6 +68,7 @@ impl ShadowContractEntry {
         let out_settings_file = contract_output_path.join("settings.json");
         let out_contract_info_file = contract_output_path.join("info.json");
         let out_source_file = contract_output_path.join("source.json");
+        let out_original_file = contract_output_path.join("original.json");
 
         // ensure output directory exists
         std::fs::create_dir_all(&contract_output_path)?;
@@ -96,6 +98,7 @@ impl ShadowContractEntry {
         std::fs::write(out_contract_info_file, serde_json::to_string(&contract_info)?)?;
         std::fs::write(contract_info_path, serde_json::to_string_pretty(&contract_info)?)?; // update original contract info
         std::fs::write(out_source_file, serde_json::to_string(&source)?)?;
+        std::fs::copy(&contract_original_source_path, &out_original_file)?;
 
         Ok(())
     }
