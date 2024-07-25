@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use alloy::primitives::Address;
 use alloy_chains::Chain;
-use eyre::{OptionExt, Result};
+use eyre::Result;
 use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
 use foundry_compilers::artifacts::{RelativeRemapping, Remapping};
 use serde::{Deserialize, Serialize};
@@ -206,10 +206,9 @@ impl ShadowContractSource {
                     PathBuf::from(&r.path)
                 };
                 r.path = new_path.to_string_lossy().to_string();
-                remappings.push(r);
-            } else {
-                remappings.push(r);
             }
+
+            remappings.push(r);
         }
 
         Ok(Self {

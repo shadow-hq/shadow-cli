@@ -3,7 +3,7 @@ use std::{path::PathBuf, str::FromStr};
 use crate::FetchArgs;
 use alloy_chains::Chain;
 use eyre::{eyre, Result};
-use foundry_block_explorers::{contract::Metadata, Client};
+use foundry_block_explorers::Client;
 use shadow_common::{
     compiler, forge::ensure_forge_installed, ShadowContractGroupInfo, ShadowContractInfo,
     ShadowContractSettings, ShadowContractSource,
