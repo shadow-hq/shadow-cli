@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use alloy::primitives::Address;
 use alloy_chains::Chain;
-use eyre::{OptionExt, Result};
+use eyre::Result;
 use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
 use foundry_compilers::artifacts::{RelativeRemapping, Remapping};
 use serde::{Deserialize, Serialize};
@@ -91,7 +91,6 @@ impl ShadowContractSource {
     /// https://github.com/foundry-rs/foundry/blob/master/crates/forge/bin/cmd/clone.rs
     pub fn new(metadata: &ContractMetadata) -> Result<Self> {
         let metadata = metadata.items.clone().remove(0);
-        let contract_name = metadata.contract_name.clone();
         let source_tree = metadata.source_tree();
 
         // get cwd
@@ -113,7 +112,7 @@ impl ShadowContractSource {
         source_tree.write_to(&raw_dir).map_err(|e| eyre::eyre!("failed to dump sources: {}", e))?;
 
         // check if the source needs reorginazation
-        let needs_reorg = std::fs::read_dir(raw_dir.join(&contract_name))?.all(|e| {
+        let needs_reorg = std::fs::read_dir(raw_dir.join(&metadata.contract_name))?.all(|e| {
             let Ok(e) = e else { return false };
             let folder_name = e.file_name();
             folder_name == "src" ||
@@ -125,7 +124,7 @@ impl ShadowContractSource {
         });
 
         // move source files
-        for entry in std::fs::read_dir(raw_dir.join(&contract_name))? {
+        for entry in std::fs::read_dir(raw_dir.join(&metadata.contract_name))? {
             let entry = entry?;
             let folder_name = entry.file_name();
             // special handling when we need to re-organize the directories: we flatten them.
@@ -206,10 +205,9 @@ impl ShadowContractSource {
                     PathBuf::from(&r.path)
                 };
                 r.path = new_path.to_string_lossy().to_string();
-                remappings.push(r);
-            } else {
-                remappings.push(r);
             }
+
+            remappings.push(r);
         }
 
         Ok(Self {
@@ -266,7 +264,7 @@ impl ShadowContractSource {
         let remappings_path = src_dir.join("remappings.txt");
         let remappings =
             self.remappings.iter().map(|r| r.to_string()).collect::<Vec<String>>().join("\n");
-        std::fs::write(&remappings_path, remappings)?;
+        std::fs::write(remappings_path, remappings)?;
 
         Ok(())
     }
