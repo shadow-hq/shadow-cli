@@ -98,7 +98,7 @@ impl ShadowContractEntry {
         std::fs::write(out_contract_info_file, serde_json::to_string(&contract_info)?)?;
         std::fs::write(contract_info_path, serde_json::to_string_pretty(&contract_info)?)?; // update original contract info
         std::fs::write(out_source_file, serde_json::to_string(&source)?)?;
-        std::fs::copy(&contract_original_source_path, &out_original_file)?;
+        std::fs::copy(contract_original_source_path, out_original_file)?;
 
         Ok(())
     }

@@ -91,7 +91,7 @@ impl ShadowContractSource {
     /// https://github.com/foundry-rs/foundry/blob/master/crates/forge/bin/cmd/clone.rs
     pub fn new(metadata: &ContractMetadata) -> Result<Self> {
         let metadata = metadata.items.clone().remove(0);
-        let contract_name = metadata.contract_name.clone();
+        let contract_name = metadata.contract_name.to_string();
         let source_tree = metadata.source_tree();
 
         // get cwd
@@ -265,7 +265,7 @@ impl ShadowContractSource {
         let remappings_path = src_dir.join("remappings.txt");
         let remappings =
             self.remappings.iter().map(|r| r.to_string()).collect::<Vec<String>>().join("\n");
-        std::fs::write(&remappings_path, remappings)?;
+        std::fs::write(remappings_path, remappings)?;
 
         Ok(())
     }
