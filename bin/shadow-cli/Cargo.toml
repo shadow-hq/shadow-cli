@@ -20,6 +20,7 @@ shadow-etherscan-fetch.workspace = true
 shadow-compile.workspace = true
 shadow-init.workspace = true
 shadow-push.workspace = true
+shadow-simulate.workspace = true
 
 eyre.workspace = true
 tokio.workspace = true

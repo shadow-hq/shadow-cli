@@ -27,7 +27,7 @@ pub async fn compile(args: CompileArgs) -> Result<()> {
     // compile the contract with the original settings
     let start_time = std::time::Instant::now();
     info!("compiling contract {} with {}...", info.name, settings.compiler_version);
-    let _ = compiler::compile(&root_dir, &settings, &info)?;
+    let _ = compiler::compile(&args.rpc_url, &root_dir, &settings, &info).await?;
     info!("compiled successfully in {}ms", start_time.elapsed().as_millis());
 
     Ok(())

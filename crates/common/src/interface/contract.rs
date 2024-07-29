@@ -5,6 +5,7 @@ use alloy_chains::Chain;
 use eyre::Result;
 use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
 use foundry_compilers::artifacts::{RelativeRemapping, Remapping};
+use revm::primitives::B256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -28,6 +29,9 @@ pub struct ShadowContractInfo {
     /// Number of unique events emitted by the contract
     #[serde(rename = "uniqueEvents")]
     pub unique_events: u64,
+    /// The deployment transaction hash
+    #[serde(rename = "deploymentTransactionHash")]
+    pub deployment_transaction_hash: B256,
 }
 
 impl ShadowContractInfo {
@@ -46,6 +50,7 @@ impl ShadowContractInfo {
             chain_id: chain.id(),
             source: "etherscan".to_string(),
             unique_events: 0,
+            deployment_transaction_hash: creation_data.transaction_hash,
         }
     }
 

@@ -21,10 +21,27 @@ async fn main() -> Result<()> {
 
     match args.sub {
         Subcommands::Config(subargs) => shadow_config::config(subargs)?,
-        Subcommands::Compile(subargs) => shadow_compile::compile(subargs).await?,
         Subcommands::Init(subargs) => shadow_init::init(subargs).await?,
+        Subcommands::Compile(mut subargs) => {
+            if let Some(rpc_url) = config.rpc_url {
+                subargs.rpc_url = rpc_url;
+            }
+
+            shadow_compile::compile(subargs).await?
+        }
+        Subcommands::Simulate(mut subargs) => {
+            if let Some(rpc_url) = config.rpc_url {
+                subargs.rpc_url = rpc_url;
+            }
+
+            shadow_simulate::simulate(subargs).await?
+        }
         Subcommands::Fetch(mut subargs) => {
             subargs.etherscan_api_key = config.etherscan_api_key;
+            if let Some(rpc_url) = config.rpc_url {
+                subargs.rpc_url = rpc_url;
+            }
+
             shadow_etherscan_fetch::fetch(subargs).await?
         }
         Subcommands::Push(mut subargs) => {
@@ -32,6 +49,9 @@ async fn main() -> Result<()> {
             subargs.pinata_secret_api_key = config.pinata_secret_api_key;
             if let Some(gateway_url) = config.ipfs_gateway_url {
                 subargs.ipfs_gateway_url = gateway_url;
+            }
+            if let Some(rpc_url) = config.rpc_url {
+                subargs.rpc_url = rpc_url;
             }
 
             shadow_push::push(subargs).await?

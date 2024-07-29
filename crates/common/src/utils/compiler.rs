@@ -1,5 +1,14 @@
-use crate::{ShadowContractInfo, ShadowContractSettings};
-use alloy::hex::FromHex;
+use crate::{
+    db::JsonRpcDatabase,
+    env::{get_eth_chain_spec, ReplayBlockEnv},
+    ShadowContractInfo, ShadowContractSettings,
+};
+use alloy::{
+    hex::FromHex,
+    network::AnyNetwork,
+    providers::{Provider, ProviderBuilder},
+    transports::http::reqwest::Url,
+};
 use alloy_json_abi::JsonAbi;
 use eyre::{eyre, OptionExt, Result};
 use revm::{
@@ -8,8 +17,11 @@ use revm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::path::{Path, PathBuf};
-use tracing::error;
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+use tracing::{error, info};
 
 /// Compiler Output
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -25,7 +37,8 @@ pub struct CompilerOutput {
 
 /// Compile a contract using the original settings.
 /// TODO @jon-becker: Ensure vyper is supported
-pub fn compile(
+pub async fn compile(
+    rpc_url: &str,
     root: &PathBuf,
     settings: &ShadowContractSettings,
     metadata: &ShadowContractInfo,
@@ -47,20 +60,47 @@ pub fn compile(
     ));
 
     // simulate the contract deployment w/ the original settings and deployer
-    // TODO @jon-becker: we might need an anvil fork running if the constructor calls out to other
-    // contracts
+    let provider = ProviderBuilder::new().network::<AnyNetwork>().on_http(Url::parse(rpc_url)?);
+
+    info!("fetching transaction details for {}", metadata.deployment_transaction_hash);
+    let tx = provider
+        .get_transaction_by_hash(metadata.deployment_transaction_hash)
+        .await?
+        .ok_or_eyre("transaction not found")?;
+    let block_number = tx.block_number.ok_or_eyre("transaction not mined")?;
+
+    info!("fetching block details for block {}", block_number);
+    let block = provider
+        .get_block_by_number(block_number.into(), true)
+        .await?
+        .ok_or_eyre("block not found")?;
+    let replay_block_env = ReplayBlockEnv::from(block);
+    let db = JsonRpcDatabase::try_new(
+        replay_block_env.clone().into(),
+        provider,
+        HashMap::new(),
+        HashMap::new(),
+    )?;
+
+    info!("constructing runtime bytecode");
     let initcode = construct_init_code(&contract_artifact, &settings.constructor_arguments)
         .map_err(|e| eyre!("failed to construct init code: {}", e))?;
-    let deployment_env = build_deployment_env(metadata.contract_deployer, initcode);
+    let deployment_env =
+        build_deployment_env(metadata.contract_deployer, initcode, replay_block_env);
 
     // execute the deployment transaction
-    let mut evm = EvmBuilder::default().with_env(deployment_env).build();
-    let result =
-        evm.transact_preverified().map_err(|e| eyre!("failed to deploy contract: {}", e))?.result;
+    let mut evm = EvmBuilder::default()
+        .with_db(db)
+        .with_spec_id(get_eth_chain_spec(&block_number))
+        .with_env(deployment_env)
+        .build();
+    let output =
+        evm.transact_preverified().map_err(|e| eyre!("failed to deploy contract: {}", e))?;
+
     let compiler_output = CompilerOutput {
         abi: serde_json::from_value(contract_artifact["abi"].clone())?,
         method_identifiers: contract_artifact["methodIdentifiers"].clone(),
-        bytecode: result.into_output().ok_or_eyre("no bytecode")?,
+        bytecode: output.result.into_output().ok_or_eyre("no bytecode")?,
     };
 
     // serialize and write the shadow artifact
@@ -149,7 +189,11 @@ fn find_contract_artifact(
 }
 
 /// Builds the EVM environment for the deployment
-fn build_deployment_env(original_deployer: RevmAddress, initcode: Bytes) -> Box<Env> {
+fn build_deployment_env(
+    original_deployer: RevmAddress,
+    initcode: Bytes,
+    replay_block_env: ReplayBlockEnv,
+) -> Box<Env> {
     let mut cfg_env = revm::primitives::CfgEnv::default();
     cfg_env.limit_contract_code_size = Some(usize::MAX);
     cfg_env.chain_id = 1u64;
@@ -158,13 +202,13 @@ fn build_deployment_env(original_deployer: RevmAddress, initcode: Bytes) -> Box<
         cfg: cfg_env,
         tx: TxEnv {
             caller: original_deployer,
-            gas_price: U256::from(1),
+            gas_price: U256::from(0),
             gas_limit: u64::MAX,
             value: U256::ZERO,
             data: initcode,
             transact_to: TxKind::Create,
             ..Default::default()
         },
-        block: BlockEnv { number: U256::from(4470000), ..Default::default() },
+        block: replay_block_env.into(),
     })
 }

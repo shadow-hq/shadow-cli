@@ -5,6 +5,7 @@ use shadow_etherscan_fetch::FetchArgs;
 use shadow_init::InitArgs;
 use shadow_push::PushArgs;
 
+use shadow_simulate::SimulateArgs;
 use shadow_tracing::{
     tracing_subscriber::filter::Directive, FileWorkerGuard, LayerInfo, LogFormat, ShadowTracer,
     Tracer,
@@ -169,4 +170,10 @@ pub(crate) enum Subcommands {
     Init(InitArgs),
     #[clap(name = "push", about = "Compiles and uploads/pins a shadow contract group to IPFS")]
     Push(PushArgs),
+    #[clap(
+        name = "simulate",
+        alias = "sim",
+        about = "Simulates a transaction with shadow overrides."
+    )]
+    Simulate(SimulateArgs),
 }

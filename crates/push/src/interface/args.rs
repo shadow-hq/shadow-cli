@@ -124,6 +124,10 @@ pub struct PushArgs {
     /// The chain to use when attesting.
     #[clap(short, long, default_value = "base", required = false)]
     pub chain: SupportedChains,
+
+    /// The RPC URL of the chain to simulate the transaction on.
+    #[clap(short = 'u', long, default_value = "http://localhost:8545")]
+    pub rpc_url: String,
 }
 
 impl PushArgs {

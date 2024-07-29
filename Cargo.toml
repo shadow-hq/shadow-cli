@@ -7,7 +7,8 @@ members = [
     "crates/common",
     "crates/compile",
     "crates/init",
-    "crates/push"
+    "crates/push",
+    "crates/simulate",
 ]
 default-members = ["bin/shadow-cli"]
 
@@ -118,6 +119,7 @@ shadow-common = { path = "crates/common" }
 shadow-compile = { path = "crates/compile" }
 shadow-init = { path = "crates/init" }
 shadow-push = { path = "crates/push" }
+shadow-simulate = { path = "crates/simulate" }
 
 # Crates.io
 clap = { version = "4", features = ["derive"] }
@@ -146,6 +148,8 @@ alloy-json-abi = { version = "0.7.6", features = ["serde_json"]}
 foundry-block-explorers = { version = "0.5.1", features = ["foundry-compilers"] }
 foundry-compilers = { version = "0.10.0", default-features = false }
 
+foundry-evm = { git = "https://github.com/foundry-rs/foundry" }
+
 revm = { git = "https://github.com/bluealloy/revm", tag = "v40", default-features = false, features = [
     "ethersdb",
     "std",
@@ -173,3 +177,5 @@ alloy = { version = "0.2.0", features = [
     "signer-yubihsm",
 ] }
 zip = "2.1.5"
+parking_lot = "0.12.1"
+futures = "0.3.30"

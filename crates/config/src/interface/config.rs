@@ -16,8 +16,8 @@ pub struct Configuration {
     pub pinata_api_key: Option<String>,
     /// The secret API key to use for IPFS interactions.
     pub pinata_secret_api_key: Option<String>,
-    /// The wallet address to use for signing and attestations.
-    pub wallet_address: Option<String>,
+    /// Your RPC URL.
+    pub rpc_url: Option<String>,
 }
 
 #[allow(deprecated)]
@@ -47,7 +47,7 @@ impl Configuration {
             pinata_secret_api_key: env_config
                 .pinata_secret_api_key
                 .or(config.pinata_secret_api_key),
-            wallet_address: env_config.wallet_address.or(config.wallet_address),
+            rpc_url: env_config.rpc_url.or(config.rpc_url),
         };
 
         Ok(config)
@@ -80,7 +80,7 @@ impl Configuration {
         match key {
             "etherscan_api_key" => self.etherscan_api_key = Some(value.to_string()),
             "ipfs_gateway_url" => self.ipfs_gateway_url = Some(value.to_string()),
-            "wallet_address" => self.wallet_address = Some(value.to_string()),
+            "rpc_url" => self.rpc_url = Some(value.to_string()),
             "pinata_api_key" => self.pinata_api_key = Some(value.to_string()),
             "pinata_secret_api_key" => self.pinata_secret_api_key = Some(value.to_string()),
             _ => return Err(eyre!("invalid key '{}'", key)),
@@ -148,15 +148,15 @@ impl Configuration {
             input.clear();
         }
 
-        // wallet_address
+        // rpc_url
         print!(
-            "{GREEN_ANSI_COLOR}4.{RESET_ANSI_COLOR} Set a new wallet address (default: {:?}): ",
-            config.wallet_address
+            "{GREEN_ANSI_COLOR}4.{RESET_ANSI_COLOR} Set a new RPC URL (default: {:?}): ",
+            config.rpc_url
         );
         std::io::stdout().flush().unwrap();
         std::io::stdin().read_line(input)?;
         if !input.trim().is_empty() {
-            config.wallet_address = Some(input.trim().to_string());
+            config.rpc_url = Some(input.trim().to_string());
             input.clear();
         }
 
