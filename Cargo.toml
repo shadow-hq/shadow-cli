@@ -172,4 +172,4 @@ alloy = { version = "0.2.0", features = [
     "signer-trezor",
     "signer-yubihsm",
 ] }
-zip = "2.1.5"
+reqwest = "0.12.5"
