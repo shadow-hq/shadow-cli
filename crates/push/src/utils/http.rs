@@ -3,7 +3,7 @@ use eyre::{eyre, Result};
 /// Calls out to `https://logs.xyz/api/pin` with the IPFS CID of the shadow contract group.
 ///
 /// This will pin your group to a permanent IPFS node, as well as enable group search on logs.xyz.
-pub async fn pin_to_logs_xyz_ipfs_node(ipfs_cid: &str) -> Result<()> {
+pub(crate) async fn pin_to_logs_xyz_ipfs_node(ipfs_cid: &str) -> Result<()> {
     let client = reqwest::Client::new();
     let response = client
         .post("https://logs.xyz/api/pin")
