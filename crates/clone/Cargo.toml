@@ -1,5 +1,5 @@
 [package]
-name = "shadow-cli"
+name = "shadow-clone"
 description.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -14,14 +14,6 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-shadow-tracing.workspace = true
-shadow-config.workspace = true
-shadow-etherscan-fetch.workspace = true
-shadow-compile.workspace = true
-shadow-init.workspace = true
-shadow-push.workspace = true
-shadow-clone.workspace = true
-
 eyre.workspace = true
 tokio.workspace = true
 clap.workspace = true
@@ -29,7 +21,13 @@ tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 envy.workspace = true
-
-[[bin]]
-name = "shadow"
-path = "src/main.rs"
+which.workspace = true
+chrono.workspace = true
+tempdir.workspace = true
+foundry-block-explorers.workspace = true
+alloy.workspace = true
+alloy-chains.workspace = true
+shadow-common.workspace = true
+reqwest.workspace = true
+shadow-init.workspace = true
+shadow-etherscan-fetch.workspace = true

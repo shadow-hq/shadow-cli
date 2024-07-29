@@ -1,4 +1,5 @@
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
+use shadow_clone::CloneArgs;
 use shadow_compile::CompileArgs;
 use shadow_config::ConfigArgs;
 use shadow_etherscan_fetch::FetchArgs;
@@ -169,4 +170,10 @@ pub(crate) enum Subcommands {
     Init(InitArgs),
     #[clap(name = "push", about = "Compiles and uploads/pins a shadow contract group to IPFS")]
     Push(PushArgs),
+    #[clap(
+        name = "clone",
+        alias = "pull",
+        about = "Clones a shadow contract group from IPFS and saves it to the local filesystem"
+    )]
+    Clone(CloneArgs),
 }
