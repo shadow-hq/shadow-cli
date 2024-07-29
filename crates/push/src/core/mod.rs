@@ -5,7 +5,10 @@ use eyre::{eyre, Result};
 use shadow_common::{forge::ensure_forge_installed, ShadowContractGroupInfo};
 use tracing::{error, info};
 
-use crate::{eas::creator_attestation, ipfs::pin_shadow_contract_group, PushArgs};
+use crate::{
+    eas::creator_attestation, http::pin_to_logs_xyz_ipfs_node, ipfs::pin_shadow_contract_group,
+    PushArgs,
+};
 
 /// The `push` subcommand. Compiles and uploads/pins a shadow contract group to IPFS.
 pub async fn push(args: PushArgs) -> Result<()> {
@@ -49,6 +52,14 @@ pub async fn push(args: PushArgs) -> Result<()> {
     // prompt attestation via EAS
     let creator_address = group_info.creator.as_ref().unwrap_or(&Address::ZERO);
     creator_attestation(&pin_result.cid, creator_address, &args.signer, &args.chain).await?;
+
+    info!("pinning IPFS CID to logs.xyz IPFS node");
+    pin_to_logs_xyz_ipfs_node(&pin_result.cid).await?;
+
+    info!(
+        "successfully pushed contract group to: https://logs.xyz/contractGroup/{}",
+        pin_result.cid
+    );
 
     Ok(())
 }

@@ -9,6 +9,7 @@ members = [
     "crates/init",
     "crates/push",
     "crates/simulate",
+    "crates/clone",
 ]
 default-members = ["bin/shadow-cli"]
 
@@ -120,6 +121,7 @@ shadow-compile = { path = "crates/compile" }
 shadow-init = { path = "crates/init" }
 shadow-push = { path = "crates/push" }
 shadow-simulate = { path = "crates/simulate" }
+shadow-clone = { path = "crates/clone" }
 
 # Crates.io
 clap = { version = "4", features = ["derive"] }
@@ -176,6 +178,6 @@ alloy = { version = "0.2.0", features = [
     "signer-trezor",
     "signer-yubihsm",
 ] }
-zip = "2.1.5"
 parking_lot = "0.12.1"
 futures = "0.3.30"
+reqwest = "0.12.5"

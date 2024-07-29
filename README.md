@@ -110,6 +110,18 @@ Note: You must update the contract group's metadata file (`./path-to-your-contra
 2. Update the `creator` field to your Ethereum address. This address must be the same as the one you use to sign the EAS transaction.
 3. Update the `README.md` file to include a description of your contract group.
 
+---
+
+### Clone an existing contract group
+
+If you would like to clone an existing contract group from IPFS, you can do so by running the following command:
+
+```bash
+shadow clone <IPFS_CID>
+```
+
+This will clone the contract group to a new directory in the current working directory with the shadowed contracts and metadata.
+
 ## Getting Help
 
 - Join the [Telegram](https://t.me/shadow_devs) to get help, or
