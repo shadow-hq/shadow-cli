@@ -168,6 +168,9 @@ impl ShadowContractGroupInfo {
             })
             .collect::<Result<Vec<ShadowContractEntry>>>()?;
 
+        // update creation date
+        self.creation_date = Utc::now();
+
         // write the updated info.json
         let info_file = self.root.join("info.json");
         let info_json = serde_json::to_string_pretty(self)?;
