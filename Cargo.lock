@@ -5133,6 +5133,7 @@ dependencies = [
  "eyre",
  "serde",
  "serde_json",
+ "shadow-clone",
  "shadow-compile",
  "shadow-config",
  "shadow-etherscan-fetch",
@@ -5141,6 +5142,29 @@ dependencies = [
  "shadow-tracing",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "shadow-clone"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-chains",
+ "chrono",
+ "clap",
+ "envy",
+ "eyre",
+ "foundry-block-explorers",
+ "reqwest 0.12.5",
+ "serde",
+ "serde_json",
+ "shadow-common",
+ "shadow-etherscan-fetch",
+ "shadow-init",
+ "tempdir",
+ "tokio",
+ "tracing",
+ "which",
 ]
 
 [[package]]

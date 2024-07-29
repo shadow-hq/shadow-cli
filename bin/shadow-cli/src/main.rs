@@ -27,6 +27,13 @@ async fn main() -> Result<()> {
             subargs.etherscan_api_key = config.etherscan_api_key;
             shadow_etherscan_fetch::fetch(subargs).await?
         }
+        Subcommands::Clone(mut subargs) => {
+            subargs.etherscan_api_key = config.etherscan_api_key;
+            if let Some(gateway_url) = config.ipfs_gateway_url {
+                subargs.ipfs_gateway_url = gateway_url;
+            }
+            shadow_clone::clone(subargs).await?
+        }
         Subcommands::Push(mut subargs) => {
             subargs.pinata_api_key = config.pinata_api_key;
             subargs.pinata_secret_api_key = config.pinata_secret_api_key;
