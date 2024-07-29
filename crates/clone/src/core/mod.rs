@@ -33,7 +33,7 @@ pub async fn clone(args: CloneArgs) -> Result<()> {
             address: contract.address.to_string(),
             etherscan_api_key: args.etherscan_api_key.clone(),
             chain: args.chain.clone(),
-            chain_id: args.chain_id.clone(),
+            chain_id: args.chain_id,
             root: root.to_string_lossy().to_string(),
             force: args.force,
         })
