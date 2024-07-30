@@ -28,7 +28,7 @@ impl<T> From<Block<T>> for ReplayBlockEnv {
                 ),
                 coinbase: block.header.miner,
                 basefee: U256::from(block.header.base_fee_per_gas.unwrap_or(0)),
-                blob_excess_gas_and_price: block.header.excess_blob_gas.map(|(excess)| {
+                blob_excess_gas_and_price: block.header.excess_blob_gas.map(|excess| {
                     BlobExcessGasAndPrice {
                         excess_blob_gas: excess.try_into().unwrap_or(0),
                         blob_gasprice: block.header.blob_fee().unwrap_or(0),
@@ -39,6 +39,7 @@ impl<T> From<Block<T>> for ReplayBlockEnv {
     }
 }
 
+/// Given block height, get the [`SpecId`] at that block height
 pub fn get_eth_chain_spec(h: &u64) -> SpecId {
     // ranges taken from https://github.com/ethereum/execution-specs
     match h {

@@ -10,15 +10,13 @@ use alloy::{
     hex::FromHex,
     json_abi::{Event, JsonAbi},
     network::AnyNetwork,
-    primitives::{TxHash, U64},
+    primitives::TxHash,
     providers::{ext::TraceApi, Provider, ProviderBuilder},
     rpc::types::trace::parity::{ChangedType, Delta, TraceResultsWithTransactionHash, TraceType},
     transports::http::reqwest::Url,
 };
 use eyre::{eyre, OptionExt, Result};
-use foundry_evm::traces::TracingInspector;
 use revm::{
-    inspector_handle_register,
     primitives::{Address, AnalysisKind, BlockEnv, Bytecode, Bytes, Env, Log, TxEnv, B256, U256},
     EvmBuilder,
 };

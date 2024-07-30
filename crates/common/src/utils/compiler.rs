@@ -12,7 +12,7 @@ use alloy::{
 use alloy_json_abi::JsonAbi;
 use eyre::{eyre, OptionExt, Result};
 use revm::{
-    primitives::{Address as RevmAddress, AnalysisKind, BlockEnv, Bytes, Env, TxEnv, TxKind, U256},
+    primitives::{Address as RevmAddress, AnalysisKind, Bytes, Env, TxEnv, TxKind, U256},
     EvmBuilder,
 };
 use serde::{Deserialize, Serialize};
