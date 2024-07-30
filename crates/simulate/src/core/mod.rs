@@ -100,7 +100,7 @@ pub async fn simulate(args: SimulateArgs) -> Result<()> {
                 .enumerate()
                 .map(|(transaction_log_index, log)| {
                     let event_selector =
-                        log.topics().get(0).cloned().ok_or_eyre("cannot decode anonymous log")?;
+                        log.topics().first().cloned().ok_or_eyre("cannot decode anonymous log")?;
 
                     let events = try_get_event_abi(&event_selector, &abis);
 

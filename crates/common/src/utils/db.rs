@@ -45,7 +45,7 @@ impl JsonRpcDatabase {
         overrides: HashMap<Address, Bytecode>,
         partial_state: HashMap<Address, PartialBlockStateDiff>,
     ) -> Result<Self> {
-        let remote_db = shared_backend(block_env, provider.clone())?;
+        let remote_db = shared_backend(block_env, provider)?;
 
         Ok(Self {
             remote_db,
@@ -85,15 +85,10 @@ impl Database for JsonRpcDatabase {
         let account = foundry_evm::revm::DatabaseRef::basic_ref(&self.remote_db, address)?
             .map(|info| DbAccount {
                 info: AccountInfo {
-                    balance: partial_state
-                        .as_ref()
-                        .map(|s| s.balance)
-                        .flatten()
-                        .unwrap_or(info.balance),
+                    balance: partial_state.as_ref().and_then(|s| s.balance).unwrap_or(info.balance),
                     nonce: partial_state
                         .as_ref()
-                        .map(|s| s.nonce.map(|n| n.try_into().expect("U64 -> u64")))
-                        .flatten()
+                        .and_then(|s| s.nonce.map(|n| n.try_into().expect("U64 -> u64")))
                         .unwrap_or(info.nonce),
                     code_hash: info.code_hash,
                     code: self
@@ -188,20 +183,17 @@ impl Database for JsonRpcDatabase {
                     info: AccountInfo {
                         balance: partial_state
                             .as_ref()
-                            .map(|s| s.balance)
-                            .flatten()
+                            .and_then(|s| s.balance)
                             .unwrap_or(account_info.balance),
                         nonce: partial_state
                             .as_ref()
-                            .map(|s| s.nonce.map(|n| n.try_into().expect("U64 -> u64")))
-                            .flatten()
+                            .and_then(|s| s.nonce.map(|n| n.try_into().expect("U64 -> u64")))
                             .unwrap_or(account_info.nonce),
                         code_hash: account_info.code_hash,
                         code: account_info.code.map(|code| Bytecode::new_raw(code.bytes())),
                     },
                     storage: partial_state.as_ref().map(|s| s.storage.clone()).unwrap_or_default(),
                     account_state: AccountState::Touched,
-                    ..Default::default()
                 };
                 account.storage.insert(index, value);
 

@@ -46,7 +46,7 @@ pub(crate) fn get_overrides(artifact_path: &PathBuf) -> Result<HashMap<Address, 
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
         .filter(|e| e.path().extension().map(|ext| ext == "hex").unwrap_or(false))
-        .map(|e| {
+        .try_for_each(|e| {
             // the address is the folder containing the hex file
             let address = e
                 .path()
@@ -66,8 +66,7 @@ pub(crate) fn get_overrides(artifact_path: &PathBuf) -> Result<HashMap<Address, 
             overrides.insert(address, bytecode);
 
             Ok::<_, eyre::Report>(())
-        })
-        .collect::<Result<_, _>>()?;
+        })?;
 
     Ok(overrides)
 }
@@ -89,8 +88,7 @@ pub(crate) fn build_state_diff(
 
         if let Some(state_diff) = trace.full_trace.state_diff {
             state_diff.0.iter().for_each(|(address, diff)| {
-                let account =
-                    accounts.entry(*address).or_insert_with(PartialBlockStateDiff::default);
+                let account = accounts.entry(*address).or_default();
 
                 match diff.balance {
                     Delta::Added(balance) => account.balance = Some(balance),
@@ -108,19 +106,17 @@ pub(crate) fn build_state_diff(
 
                 diff.storage.iter().for_each(|(key, value)| match value {
                     Delta::Added(value) => {
-                        account.storage.insert(
-                            U256::try_from(*key).expect("impossible"),
-                            U256::try_from(*value).expect("impossible"),
-                        );
+                        account
+                            .storage
+                            .insert(U256::from_be_slice(&key.0), U256::from_be_slice(&value.0));
                     }
                     Delta::Removed(_) => {
-                        account.storage.remove(&U256::try_from(*key).expect("impossible"));
+                        account.storage.remove(&U256::from_be_slice(&key.0));
                     }
                     Delta::Changed(ChangedType { from: _, to }) => {
-                        account.storage.insert(
-                            U256::try_from(*key).expect("impossible"),
-                            U256::try_from(*to).expect("impossible"),
-                        );
+                        account
+                            .storage
+                            .insert(U256::from_be_slice(&key.0), U256::from_be_slice(&to.0));
                     }
                     _ => {}
                 });

@@ -47,15 +47,27 @@ Data                  : 0x{}
                 log.transaction_log_index,
                 log.log.address,
                 log.log.topics()[0],
-                log.log.topics().get(1).map(|t| t.to_string()).unwrap_or(String::from("N/A")),
-                log.log.topics().get(2).map(|t| t.to_string()).unwrap_or(String::from("N/A")),
-                log.log.topics().get(3).map(|t| t.to_string()).unwrap_or(String::from("N/A")),
+                log.log
+                    .topics()
+                    .get(1)
+                    .map(|t| t.to_string())
+                    .unwrap_or_else(|| String::from("N/A")),
+                log.log
+                    .topics()
+                    .get(2)
+                    .map(|t| t.to_string())
+                    .unwrap_or_else(|| String::from("N/A")),
+                log.log
+                    .topics()
+                    .get(3)
+                    .map(|t| t.to_string())
+                    .unwrap_or_else(|| String::from("N/A")),
                 log.log
                     .data
                     .data
                     .to_vec()
                     .chunks(32)
-                    .map(|chunk| hex::encode(chunk))
+                    .map(hex::encode)
                     .collect::<Vec<_>>()
                     .join("\n                      :   ")
             ),
@@ -86,10 +98,19 @@ impl std::fmt::Display for FullDecodedEvent {
             .inner
             .indexed
             .iter()
-            .chain(self.inner.body.iter())
             .enumerate()
+            .chain(
+                self.inner.body.iter().enumerate().map(|(i, v)| (i + self.inner.indexed.len(), v)),
+            )
             .map(|(i, value)| {
-                let name = self.event.inputs.get(i).map(|i| i.name.as_str()).unwrap_or("N/A");
+                let indexed_len = self.inner.indexed.len();
+                let name = if i < indexed_len {
+                    self.event.inputs.iter().filter(|input| input.indexed).nth(i)
+                } else {
+                    self.event.inputs.iter().filter(|input| !input.indexed).nth(i - indexed_len)
+                }
+                .map(|input| input.name.as_str())
+                .unwrap_or("N/A");
 
                 format!("{} {:?}", name, value)
             })

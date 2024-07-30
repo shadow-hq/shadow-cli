@@ -1,5 +1,3 @@
-use std::u64;
-
 use alloy::rpc::types::Block;
 use revm::primitives::{BlobExcessGasAndPrice, BlockEnv, SpecId, B256, U256};
 
