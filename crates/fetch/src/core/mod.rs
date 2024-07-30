@@ -90,7 +90,7 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     // rebuild source
     source.write_source_to(&output_dir)?;
     settings.generate_config(&output_dir)?;
-    compiler::compile(&output_dir, &settings, &info)?;
+    compiler::compile(&args.rpc_url, &output_dir, &settings, &info).await?;
 
     // update shadow contract group info
     if let Some(group_info) = group_info.as_mut() {

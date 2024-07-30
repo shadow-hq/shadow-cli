@@ -36,6 +36,7 @@ pub async fn clone(args: CloneArgs) -> Result<()> {
             chain_id: args.chain_id,
             root: root.to_string_lossy().to_string(),
             force: args.force,
+            rpc_url: args.rpc_url.clone(),
         })
         .await?;
 

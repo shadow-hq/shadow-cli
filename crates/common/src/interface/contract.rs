@@ -5,6 +5,7 @@ use alloy_chains::Chain;
 use eyre::Result;
 use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
 use foundry_compilers::artifacts::{RelativeRemapping, Remapping};
+use revm::primitives::B256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -28,6 +29,9 @@ pub struct ShadowContractInfo {
     /// Number of unique events emitted by the contract
     #[serde(rename = "uniqueEvents")]
     pub unique_events: u64,
+    /// The deployment transaction hash
+    #[serde(rename = "deploymentTransactionHash")]
+    pub deployment_transaction_hash: B256,
 }
 
 impl ShadowContractInfo {
@@ -46,6 +50,7 @@ impl ShadowContractInfo {
             chain_id: chain.id(),
             source: "etherscan".to_string(),
             unique_events: 0,
+            deployment_transaction_hash: creation_data.transaction_hash,
         }
     }
 
@@ -262,8 +267,12 @@ impl ShadowContractSource {
 
         // write remappings.txt
         let remappings_path = src_dir.join("remappings.txt");
-        let remappings =
-            self.remappings.iter().map(|r| r.to_string()).collect::<Vec<String>>().join("\n");
+        let remappings = self
+            .remappings
+            .iter()
+            .map(|r| format!("{}/={}", r.name, r.path.original().display()))
+            .collect::<Vec<String>>()
+            .join("\n");
         std::fs::write(remappings_path, remappings)?;
 
         Ok(())
@@ -360,7 +369,7 @@ impl ShadowContractSettings {
             libraries: serde_json::json!({}),
             compiler_version: metadata.compiler_version.clone(),
             constructor_arguments: metadata.constructor_arguments.to_vec(),
-            evm_version: metadata.evm_version.clone(),
+            evm_version: metadata.evm_version().ok().flatten().unwrap_or_default().to_string(),
         }
     }
 
@@ -369,10 +378,11 @@ impl ShadowContractSettings {
     pub fn generate_config(&self, src_root: &Path) -> Result<()> {
         let config_path = src_root.join("foundry.toml");
         let config = format!(
-            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"",
+            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"\nevm_version = \"{}\"",
             self.optimizer.enabled,
             self.optimizer.runs,
-            self.compiler_version.strip_prefix('v').unwrap_or(&self.compiler_version)
+            self.compiler_version.strip_prefix('v').unwrap_or(&self.compiler_version),
+            self.evm_version
         );
 
         // overwrite `foundry.toml` if it already exists

@@ -33,7 +33,8 @@ pub async fn push(args: PushArgs) -> Result<()> {
     // prepare the group for pinning. this will compile all contracts and build the final
     // IPFS folder structure
     let contract_group_artifact_path = group_info
-        .prepare()
+        .prepare(&args.rpc_url)
+        .await
         .map_err(|e| eyre!("Failed to prepare shadow contract group: {}", e))?;
 
     // pin the created folder to IPFS

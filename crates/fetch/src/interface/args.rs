@@ -30,6 +30,10 @@ pub struct FetchArgs {
     /// Whether to force overwrite the existing files.
     #[clap(short, long)]
     pub force: bool,
+
+    /// The RPC URL of the chain to simulate the transaction on.
+    #[clap(short = 'u', long, default_value = "http://localhost:8545")]
+    pub rpc_url: String,
 }
 
 impl TryFrom<FetchArgs> for Chain {

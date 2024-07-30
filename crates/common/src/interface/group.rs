@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use alloy::primitives::Address;
 use chrono::{DateTime, Utc};
 use eyre::{eyre, Result};
+use futures::future::try_join_all;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info};
@@ -50,7 +51,7 @@ impl From<ShadowContractInfo> for ShadowContractEntry {
 
 impl ShadowContractEntry {
     /// Compiles the contract that this entry references
-    pub fn compile(&self, root: &Path, output: &Path) -> Result<()> {
+    pub async fn compile(&self, rpc_url: &str, root: &Path, output: &Path) -> Result<()> {
         let start_time = std::time::Instant::now();
 
         // build paths
@@ -83,7 +84,8 @@ impl ShadowContractEntry {
         );
 
         // compile the contract
-        let output = compiler::compile(&contract_path, &contract_settings, &contract_info)?;
+        let output =
+            compiler::compile(rpc_url, &contract_path, &contract_settings, &contract_info).await?;
 
         debug!("Compiled {} successfully in {:?}", contract_info.name, start_time.elapsed());
 
@@ -202,7 +204,7 @@ impl ShadowContractGroupInfo {
     /// Prepares the contract group for pinning to IPFS. Compiles all shadow contracts
     /// in the group and generates the proper folder structure which will be pinned
     /// to IPFS.
-    pub fn prepare(&mut self) -> Result<PathBuf> {
+    pub async fn prepare(&mut self, rpc_url: &str) -> Result<PathBuf> {
         // re-scan the contracts directory for new contracts
         let _ = &self.update_contracts()?;
 
@@ -216,10 +218,14 @@ impl ShadowContractGroupInfo {
 
         // we need to compile each contract in the group. We can do this in parallel w/ rayon
         info!("compiling {} shadow contracts", self.contracts.len());
-        self.contracts
+        let compile_futures = self
+            .contracts
             .par_iter()
-            .map(|contract| contract.compile(&self.root, &out_folder))
-            .collect::<Result<Vec<()>>>()?;
+            .map(|contract| contract.compile(rpc_url, &self.root, &out_folder))
+            .collect::<Vec<_>>();
+
+        try_join_all(compile_futures).await?;
+
         info!("compiled all shadow contracts successfully");
 
         Ok(out_folder)

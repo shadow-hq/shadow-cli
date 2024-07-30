@@ -7,4 +7,8 @@ pub struct CompileArgs {
     /// The project's root path
     #[clap(short, long, default_value = ".", hide_default_value = true)]
     pub root: String,
+
+    /// The RPC URL of the chain to simulate the transaction on.
+    #[clap(short = 'u', long, default_value = "http://localhost:8545")]
+    pub rpc_url: String,
 }

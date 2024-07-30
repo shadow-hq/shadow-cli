@@ -39,6 +39,10 @@ pub struct CloneArgs {
         hide_default_value = true
     )]
     pub ipfs_gateway_url: String,
+
+    /// The RPC URL of the chain to simulate the transaction on.
+    #[clap(short = 'u', long, default_value = "http://localhost:8545")]
+    pub rpc_url: String,
 }
 
 impl TryFrom<CloneArgs> for Chain {
