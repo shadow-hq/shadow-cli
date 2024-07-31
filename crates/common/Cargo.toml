@@ -39,3 +39,4 @@ foundry-compilers.workspace = true
 foundry-evm.workspace = true
 parking_lot.workspace = true
 futures.workspace = true
+reqwest.workspace = true

@@ -6,7 +6,9 @@ pub(crate) mod args;
 use args::{Arguments, Subcommands};
 use clap::Parser;
 use eyre::Result;
+use shadow_common::version::*;
 use shadow_config::Configuration;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -15,6 +17,14 @@ async fn main() -> Result<()> {
 
     // init tracing
     let _ = args.logs.init_tracing();
+
+    // spawn a new tokio runtime to get remote version while the main runtime is running
+    let current_version = current_version();
+    let remote_ver = if current_version.is_nightly() {
+        tokio::task::spawn(remote_nightly_version()).await??
+    } else {
+        tokio::task::spawn(remote_version()).await??
+    };
 
     // load config
     let config = Configuration::load()?;
@@ -68,6 +78,15 @@ async fn main() -> Result<()> {
             shadow_push::push(subargs).await?
         }
     };
+
+    // check if the version is up to date
+    if current_version.is_nightly() && current_version.ne(&remote_ver) {
+        info!("great news! A new nightly build is available!");
+        info!("you can update now by running: `shadowup +nightly`");
+    } else if remote_ver.gt(&current_version) {
+        info!("great news! An update is available!");
+        info!("you can update now by running: `shadowup --version {}`", remote_ver);
+    }
 
     Ok(())
 }

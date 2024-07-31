@@ -22,6 +22,7 @@ shadow-init.workspace = true
 shadow-push.workspace = true
 shadow-simulate.workspace = true
 shadow-clone.workspace = true
+shadow-common.workspace = true
 
 eyre.workspace = true
 tokio.workspace = true
