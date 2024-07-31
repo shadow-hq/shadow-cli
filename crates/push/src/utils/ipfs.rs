@@ -21,6 +21,7 @@ pub(crate) async fn pin_shadow_contract_group(
 ) -> Result<PinResult> {
     let api = PinataApi::new(api_key, secret_api_key)
         .map_err(|e| eyre!("Failed to create Pinata API client: {}", e))?;
+    api.test_authentication().await.map_err(|_| eyre!("Invalid pinata credentials"))?;
     let result = api
         .pin_file(PinByFile::new(format!("{}/", path.to_string_lossy())))
         .await
