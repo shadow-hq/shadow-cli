@@ -4,18 +4,29 @@ An open-souce CLI which can be used to clone, compile and upload shadow contract
 
 ## Installation
 
-### Clone this repository
+Ensure that Rust & Cargo are installed:
+
+_Note: Rust >= 1.79.0 is required!_
 
 ```bash
-git clone https://github.com/shadow-hq/shadow-cli
-cd shadow-cli
+curl https://sh.rustup.rs -sSf | sh
 ```
 
-### Build and install the shadow-cli binary
+The CLI's update and installation manager, `shadowup`, can be installed using the following command:
 
 ```bash
-cargo install --locked --path bin/shadow-cli --bin shadow
+curl -L https://raw.githubusercontent.com/shadow-hq/shadow-cli/main/shadowup/install | bash
 ```
+
+If you want to manually install `shadowup`, you can download the latest release from [here](./shadowup/shadowup).
+
+Once you have installed `shadowup`, you can use it to install the Shadow CLI using the following command from a new terminal:
+
+```bash
+shadowup
+```
+
+After compilation, the `shadow` command will be available to use from a new terminal. For advanced options, see the [shadowup docs](./shadowup)
 
 ## Usage
 
