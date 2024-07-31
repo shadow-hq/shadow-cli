@@ -31,8 +31,7 @@ impl Configuration {
         if !config_path.exists() {
             // write it
             let config = Configuration::default();
-            let config = serde_json::to_string_pretty(&config)?;
-            std::fs::write(&config_path, config)?;
+            config.save()?;
         }
 
         let config = std::fs::read_to_string(config_path)?;
