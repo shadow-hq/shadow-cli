@@ -333,6 +333,9 @@ pub struct ShadowContractSettings {
     /// The EVM version
     #[serde(rename = "evmVersion")]
     pub evm_version: String,
+    /// Via IR
+    #[serde(rename = "viaIr")]
+    pub via_ir: bool,
 }
 
 /// Optimizer settings
@@ -370,6 +373,7 @@ impl ShadowContractSettings {
             compiler_version: metadata.compiler_version.clone(),
             constructor_arguments: metadata.constructor_arguments.to_vec(),
             evm_version: metadata.evm_version().ok().flatten().unwrap_or_default().to_string(),
+            via_ir: metadata.settings().map(|s| s.via_ir).ok().flatten().unwrap_or(false),
         }
     }
 
@@ -378,11 +382,12 @@ impl ShadowContractSettings {
     pub fn generate_config(&self, src_root: &Path) -> Result<()> {
         let config_path = src_root.join("foundry.toml");
         let config = format!(
-            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"\nevm_version = \"{}\"",
+            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"\nevm_version = \"{}\"\nvia_ir = {}",
             self.optimizer.enabled,
             self.optimizer.runs,
             self.compiler_version.strip_prefix('v').unwrap_or(&self.compiler_version),
-            self.evm_version
+            self.evm_version,
+            self.via_ir
         );
 
         // overwrite `foundry.toml` if it already exists
