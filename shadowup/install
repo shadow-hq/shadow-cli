@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -e
+
+# adapted from https://github.com/Jon-Becker/heimdall-rs
+
+SHADOW_PATH=${SHADOW_PATH:-"$HOME/.shadow"}
+SHADOW_BIN_DIR="$SHADOW_PATH/bin"
+
+SHADOWUP_BINARY="https://raw.githubusercontent.com/shadow-hq/shadow-cli/main/shadowup/shadowup"
+
+# Create the ~/.shadow directory and install the shaduwup executable in it.
+mkdir -p $SHADOW_BIN_DIR
+curl -# -L $SHADOWUP_BINARY -o "$SHADOW_BIN_DIR/shadowup"
+chmod +x "$SHADOW_BIN_DIR/shadowup"
+
+# Only add shadow to the path if it's not already there.
+if [[ ":$PATH:" != *":${SHADOW_BIN_DIR}:"* ]]; then
+
+    # Detect the current shell being used for the installation
+    case $SHELL in
+        */zsh)
+            SHELL_PROFILE=$HOME/.zshrc
+            echo >> $SHELL_PROFILE && echo "export PATH=\"\$PATH:$SHADOW_BIN_DIR\"" >> $SHELL_PROFILE
+            ;;
+        */bash)
+            SHELL_PROFILE=$HOME/.bashrc
+            echo >> $SHELL_PROFILE && echo "export PATH=\"\$PATH:$SHADOW_BIN_DIR\"" >> $SHELL_PROFILE
+            SHELL_PROFILE=$HOME/.bash_profile
+            echo >> $SHELL_PROFILE && echo "export PATH=\"\$PATH:$SHADOW_BIN_DIR\"" >> $SHELL_PROFILE
+            ;;
+        */fish)
+            SHELL_PROFILE=$HOME/.config/fish/config.fish
+            echo >> $SHELL_PROFILE && echo "export PATH=\"\$PATH:$SHADOW_BIN_DIR\"" >> $SHELL_PROFILE
+            ;;
+        *)
+            echo "shadowup: Look's like you're using a shell that is not recognized by shadowup. Please manually add ${SHADOW_BIN_DIR} to your PATH."
+            exit 1
+    esac
+
+fi
+
+echo && echo "shadowup: Installation complete."
+echo "Open a new terminal and run 'shadowup' to install the Shadow cli."

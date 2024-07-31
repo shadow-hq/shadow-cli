@@ -1,0 +1,234 @@
+#!/usr/bin/env bash
+set -e
+
+# adapted from https://github.com/Jon-Becker/heimdall-rs
+
+SHADOW_PATH=${SHADOW_PATH:-"$HOME/.shadow"}
+SHADOW_BIN_DIR="$SHADOW_PATH/bin"
+
+main() {
+    # ensuring git, curl, and cargo are installed
+    requires_cmd git
+    requires_cmd curl
+    requires_cmd cargo
+    check_rust_version
+
+
+    # parsing parameters
+    while [[ $1 ]]; do
+        case $1 in
+            --)                    shift; break ;;
+            -u|--upgrade|--update) shift;
+                echo "shadowup: removing old shadowup binary"
+
+                rm -rf "$SHADOW_PATH"
+
+                ensure curl -L https://raw.githubusercontent.com/shadow-hq/shadow-cli/main/shadowup/install | bash
+                exit 0
+                ;;
+            -v|--version)           shift;
+                TARGET_VERSION=$1
+                shift
+                ;;
+            -B|--binary|--bin)      shift; USE_BINARY=true ;;
+            +nightly)               shift; NIGHTLY_CHANNEL=true ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -l|--list|--versions)   shift;
+                versions
+                exit 0
+                ;;
+            *)
+                echo "shadowup: option '$1' not recognized"
+                exit 1
+                ;;
+        esac;
+    done
+
+    # print channel
+    if [ -n "$NIGHTLY_CHANNEL" ]; then
+        echo "shadowup: using nightly channel"
+    else
+        echo "shadowup: using stable channel"
+    fi
+
+    # remove the current shadow installation if it exists
+    ensure rm -f "$SHADOW_BIN_DIR/shadow"
+
+    # make the build path if it doesn't exist
+    BUILD_PATH="${SHADOW_PATH}/build"
+    if [ ! -d $BUILD_PATH ]; then
+        ensure mkdir -p $BUILD_PATH
+    fi
+
+    # remove the source directory if it exists
+    ensure rm -rf "$BUILD_PATH/shadow-cli"
+    # clone shadow-cli and cd into it
+    cd $BUILD_PATH
+    echo "shadowup: cloning 'shadow-hq/shadow-cli'."
+    # git clone, but only include the "Resolving deltas: ..." and "Receiving objects: ..." lines
+    ensure git clone "https://github.com/shadow-hq/shadow-cli" --progress 2>&1 | grep -E "Resolving deltas:|Receiving objects:"
+    cd "shadow-cli"
+    ensure git fetch origin
+
+    # if we are nightly, use `main` branch
+    if [ -n "$NIGHTLY_CHANNEL" ]; then
+        ensure git checkout main > /dev/null 2>&1
+
+        # get the latest short commit hash
+        TARGET_VERSION=$(git rev-parse --short HEAD)
+
+        # get the latest tag
+        tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+        if [ -z "$tag" ]; then
+          tag="0.1.0" # default 0.1.0
+        fi
+
+        # build nightly version
+        nightly_version="$tag+nightly.$TARGET_VERSION"
+        echo "shadowup: installing version $nightly_version."
+    # if they specified a version, checkout that tag or branch
+    elif [ -n "$TARGET_VERSION" ]; then
+        echo "shadowup: installing version $TARGET_VERSION."
+
+        ensure git checkout $TARGET_VERSION > /dev/null 2>&1
+    else
+
+        # checkout the latest tag
+        tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+
+        echo "shadowup: installing version $tag."
+        TARGET_VERSION=$tag
+
+        ensure git checkout $tag -b latest > /dev/null 2>&1
+    fi
+
+    # if the user wants to use the precompiled binary, download it
+    if [ -n "$USE_BINARY" ]; then
+        # nightly binaries are not available
+        if [ -n "$NIGHTLY_CHANNEL" ]; then
+            echo "shadowup: nightly binaries are not available."
+            exit 1
+        fi
+
+        # cd into the binary directory
+        ensure cd $SHADOW_BIN_DIR
+        echo "shadowup: fetching binary."
+
+        # download the binary
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            ensure curl -k -L -s --compressed "https://github.com/shadow-hq/shadow-cli/releases/download/$TARGET_VERSION/shadow-linux-amd64" -o shadow
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+            ensure curl -k -L -s --compressed "https://github.com/shadow-hq/shadow-cli/releases/download/$TARGET_VERSION/shadow-macos-amd64" -o shadow
+        else
+            echo "shadowup: unsupported operating system: $OSTYPE"
+            exit 1
+        fi
+        echo "shadowup: installing binary."
+
+        # make the binary executable
+        ensure chmod +x shadow
+    else
+        # if nightly, we need to update cargo.toml versions (hacky lol)
+        if [ -n "$NIGHTLY_CHANNEL" ]; then
+            find . -name 'Cargo.toml' -type f | while read -r file; do
+                set_version "$file" "$nightly_version"
+            done
+        fi
+
+        RUSTFLAGS="-C target-cpu=native -C codegen-units=1" CARGO_PROFILE_RELEASE_LTO=true ensure cargo install --path bin/shadow-cli --locked --force --root $SHADOW_PATH
+    fi
+
+    echo "shadowup: installation complete."
+}
+
+# list all available versions of shadow
+versions() {
+    msg="Available versions of Shadow:"
+    tag_filter="cat"
+
+    cat 1>&2 <<EOF
+
+$msg
+
+Version                                   |   Tag                      |
+----------------------------------------- | -------------------------- |
+EOF
+    git ls-remote --tags "https://github.com/shadow-hq/shadow-cli" \
+    | eval $tag_filter \
+    | awk '{line[NR]=$0} END {for (i=NR; i>0; i--) print line[i]}'
+}
+
+
+
+# usage prints the usage message
+usage() {
+    cat 1>&2 <<EOF
+
+Shadowup is the version manager for the Shadow CLI.
+
+Install and manage specific versions of Shadow and it's packages.
+
+USAGE:
+    shadowup [FLAGS] <OPTIONS>
+
+OPTIONS:
+    -h, --help      Print help information
+    -u, --update    Update shadowup to the latest version
+    -B, --binary    Install a precompiled binary instead of building from source
+    -v, --version   Install a specific version
+    -l, --list      List all available versions
+
+FLAGS:
+    +nightly        Install the latest nightly build
+
+EOF
+}
+
+# ensure runs a command and exits if it fails
+ensure() {
+    if ! "$@"; then echo "shadowup: required command '$*' failed."; exit 1; fi
+}
+
+# command_exists checks if a command exists
+command_exists() {
+    command -v "$1" > /dev/null 2>&1
+}
+
+# requires_cmd checks if a command exists and exits if it doesn't
+requires_cmd() {
+    if ! command_exists "$1"; then
+        echo "shadowup: '$1' is required but not installed on this system"
+        exit 1
+    fi
+}
+
+# set the version of $1 to $2
+set_version() {
+    local file=$1
+    local version=$2
+    sed -i "" "s/^version.*/version = \"${version}\"/" $file
+}
+
+# ensure rust 1.79.0or greater is installed
+check_rust_version() {
+    # Get the rustc version
+    rustc_version=$(rustc -V | awk '{print $2}')
+    required_version="1.79.0"
+
+    # Function to compare versions
+    version_lt() {
+        [ "$1" = "$(echo -e "$1\n$2" | sort -V | head -n1)" ] && [ "$1" != "$2" ]
+    }
+
+    if version_lt "$rustc_version" "$required_version"; then
+        echo "shadowup: rustc version $rustc_version is less than the required $required_version"
+        echo "shadowup: please update rust via rustup"
+        exit 1
+    fi
+}
+
+# run main
+main "$@" || exit 1
