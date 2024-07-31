@@ -98,6 +98,15 @@ impl Display for Version {
     }
 }
 
+impl PartialEq for Version {
+    fn eq(&self, other: &Version) -> bool {
+        self.major == other.major &&
+            self.minor == other.minor &&
+            self.patch == other.patch &&
+            self.channel == other.channel
+    }
+}
+
 impl Version {
     /// greater than
     pub fn gt(&self, other: &Version) -> bool {
@@ -125,14 +134,6 @@ impl Version {
         self.major < other.major ||
             (self.major == other.major && self.minor < other.minor) ||
             (self.major == other.major && self.minor == other.minor && self.patch <= other.patch)
-    }
-
-    /// equal to
-    pub fn eq(&self, other: &Version) -> bool {
-        self.major == other.major &&
-            self.minor == other.minor &&
-            self.patch == other.patch &&
-            self.channel == other.channel
     }
 
     /// not equal to
