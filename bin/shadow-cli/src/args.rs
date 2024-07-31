@@ -136,6 +136,7 @@ impl Verbosity {
 }
 
 #[derive(Debug, Parser)]
+#[clap(name = "shadow", author = "Shadow Contributors", version)]
 pub(crate) struct Arguments {
     #[clap(subcommand)]
     pub(crate) sub: Subcommands,

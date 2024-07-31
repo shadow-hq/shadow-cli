@@ -270,7 +270,14 @@ impl ShadowContractSource {
         let remappings = self
             .remappings
             .iter()
-            .map(|r| format!("{}/={}", r.name, r.path.original().display()))
+            .map(|r| {
+                format!(
+                    "{}{}={}",
+                    r.name,
+                    if !r.name.to_string().ends_with('/') { "/" } else { "" },
+                    r.path.original().display()
+                )
+            })
             .collect::<Vec<String>>()
             .join("\n");
         std::fs::write(remappings_path, remappings)?;
