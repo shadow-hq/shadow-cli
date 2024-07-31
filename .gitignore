@@ -75,3 +75,6 @@ shadow.json
 
 # Ignore ContractGroup folders
 ContractGroup**
+
+# allow shadowup/*
+!/shadowup/*
