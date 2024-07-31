@@ -2,6 +2,8 @@
 
 An open-souce CLI which can be used to clone, compile and upload shadow contracts to the decentralized [Shadow Contract Registry](https://logs.xyz).
 
+[![test-rs](https://github.com/shadow-hq/shadow-cli/actions/workflows/test-rs.yml/badge.svg?branch=main)](https://github.com/shadow-hq/shadow-cli/actions/workflows/test-rs.yml)
+
 ## Installation
 
 Ensure that Rust & Cargo are installed:
