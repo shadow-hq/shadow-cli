@@ -273,7 +273,7 @@ impl ShadowContractSource {
             .map(|r| {
                 format!(
                     "{}{}={}",
-                    r.name.to_string(),
+                    r.name,
                     if !r.name.to_string().ends_with("/") { "/" } else { "" },
                     r.path.original().display()
                 )
