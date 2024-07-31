@@ -47,7 +47,9 @@ async fn main() -> Result<()> {
             shadow_simulate::simulate(subargs).await?
         }
         Subcommands::Fetch(mut subargs) => {
-            subargs.etherscan_api_key = config.etherscan_api_key;
+            if let Some(etherscan_api_key) = config.etherscan_api_key {
+                subargs.etherscan_api_key = Some(etherscan_api_key);
+            }
             if let Some(rpc_url) = config.rpc_url {
                 subargs.rpc_url = rpc_url;
             }
@@ -55,7 +57,9 @@ async fn main() -> Result<()> {
             shadow_etherscan_fetch::fetch(subargs).await?
         }
         Subcommands::Clone(mut subargs) => {
-            subargs.etherscan_api_key = config.etherscan_api_key;
+            if let Some(etherscan_api_key) = config.etherscan_api_key {
+                subargs.etherscan_api_key = Some(etherscan_api_key);
+            }
             if let Some(gateway_url) = config.ipfs_gateway_url {
                 subargs.ipfs_gateway_url = gateway_url;
             }
@@ -66,8 +70,12 @@ async fn main() -> Result<()> {
             shadow_clone::clone(subargs).await?
         }
         Subcommands::Push(mut subargs) => {
-            subargs.pinata_api_key = config.pinata_api_key;
-            subargs.pinata_secret_api_key = config.pinata_secret_api_key;
+            if let Some(pinata_api_key) = config.pinata_api_key {
+                subargs.pinata_api_key = Some(pinata_api_key)
+            }
+            if let Some(pinata_secret_api_key) = config.pinata_secret_api_key {
+                subargs.pinata_secret_api_key = Some(pinata_secret_api_key)
+            }
             if let Some(gateway_url) = config.ipfs_gateway_url {
                 subargs.ipfs_gateway_url = gateway_url;
             }

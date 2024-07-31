@@ -1,8 +1,9 @@
 # shadow-cli
 
-An open-souce CLI which can be used to clone, compile and upload shadow contracts to the decentralized [Shadow Contract Registry](https://logs.xyz).
-
 [![test-rs](https://github.com/shadow-hq/shadow-cli/actions/workflows/test-rs.yml/badge.svg?branch=main)](https://github.com/shadow-hq/shadow-cli/actions/workflows/test-rs.yml)
+![GitHub release (with filter)](https://img.shields.io/github/v/release/shadow-hq/shadow-cli?color=success&label=Latest%20Version)
+
+An open-souce CLI which can be used to clone, compile and upload shadow contracts to the decentralized [Shadow Contract Registry](https://logs.xyz).
 
 ## Installation
 
@@ -30,110 +31,159 @@ shadowup
 
 After compilation, the `shadow` command will be available to use from a new terminal. For advanced options, see the [shadowup docs](./shadowup)
 
-## Usage
+## Expected Usage
 
-### Create a shadow contract
+The expected workflow for creating and pushing a new shadow contract group is as follows:
 
-Let's start by cloning the WETH shadow contract to a new directory.
+### From Scratch
 
-```bash
-shadow fetch 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --root ./shadow-weth
-```
+1. Initialize a new contract group with [`shadow init`](#create-a-contract-group).
+2. Add shadow contracts to the contract group with [`shadow fetch`](#create-a-shadow-contract).
+3. Modify the shadow contracts as needed.
+   1. Optionally, compile the shadow contracts with [`shadow compile`](#compiling-your-shadow-contract).
+   2. Optionally, test the shadow contracts with [`shadow sim`](#testing-your-shadow-contract).
+4. Push the contract group to the Shadow Contract Registry with [`shadow push`](#uploading-your-contract-group).
 
-This command will create a new directory in the current working directory and pull the verified source code and other contract metadata into it. You can modify the contract code as you normally would, and then compile it using the `shadow compile` command.
+### From an Existing Contract Group
 
-For our example, we'll just add a simple `ShadowTransfer` event immediately after the `Transfer` event in the WETH contract.
-
-```solidity
-function transferFrom(address src, address dst, uint wad) public returns (bool) {
-    ...
-
-    Transfer(src, dst, wad);
-    ShadowTransfer();
-
-    ...
-}
-```
+1. Clone an existing contract group with [`shadow clone`](#clone-an-existing-contract-group).
+2. Modify the shadow contracts as needed.
+   1. Optionally, compile the shadow contracts with [`shadow compile`](#compiling-your-shadow-contract).
+   2. Optionally, test the shadow contracts with [`shadow sim`](#testing-your-shadow-contract).
+3. Push the contract group to the Shadow Contract Registry with [`shadow push`](#uploading-your-contract-group).
 
 ---
 
-### Compiling your shadow contract
+## Commands
 
-```bash
-shadow compile --root ./shadow-weth
-```
+### Create a Contract Group
 
-This command will compile the shadow contract via [forge](https://github.com/foundry-rs/foundry), simulate the original contract deployment, and generate shadow compiler artifacts under `./shadow-weth/out/Contract.sol/WETH9.shadow.json` (right next to the original contract artifacts).
-
-WETH9.shadow.json:
-```json
-{
-  "abi": [
-    ...,
-    {
-      "type": "event",
-      "name": "ShadowTransfer",
-      "inputs": [],
-      "anonymous": false
-    },
-    ...
-  ],
-  "methodIdentifiers": { ... },
-  "bytecode": "0x60606040..."
-}
-```
-
----
-
-### Create a contract group
-
-In order to upload your shadow contract to the decentralized Shadow Contract Registry, you need to create a contract group. A contract group is a collection of shadow contracts that are related to each other in some way.
-
-You can simply do this by running the following command:
-
+<details>
+<summary>shadow init</summary>
 ```bash
 shadow init
 ```
 
-This command will create a new contract group in the current working directory (or, you can change the `--root` flag to specify a different directory). You can then add shadow contracts to this group by running the following command:
+This command initializes a new contract group in the current directory. The contract group will have the following structure:
 
-```bash
-shadow fetch 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 --root ./path-to-your-contract-group
+```
+ContractGroup_01_01_2000_01_01
+├── info.json     # Contains metadata about the contract group
+└── README.md     # Contains a README you can fill out with information about the contract group
 ```
 
----
+#### Optional Flags
 
-### Uploading your contract group
+- `--root <path>`: The path to the directory in which to initialize the shadow contract group [default: .]
+</details>
 
-When you're satisfied with your changes, you can upload your contract group to the Shadow Contract Registry by running the following command:
+### Create a Shadow Contract
 
-```bash
-shadow push --root ./path-to-your-contract-group
-```
-
-This will:
-
-1. Compile all shadow contracts in the contract group.
-2. Uploads the contract group's artifacts to IPFS.
-3. Prompt you to send a transaction to EAS on Base, attesting that you are the owner of the contract group. (optional, although your changes will not be reflected in the Shadow Contract Registry until you do this)
-
-Note: You must update the contract group's metadata file (`./path-to-your-contract-group/info.json`) before you'll be able to push your changes. You must:
-
-1. Update the `displayName` field to a human-readable name for your contract group.
-2. Update the `creator` field to your Ethereum address. This address must be the same as the one you use to sign the EAS transaction.
-3. Update the `README.md` file to include a description of your contract group.
-
----
-
-### Clone an existing contract group
-
-If you would like to clone an existing contract group from IPFS, you can do so by running the following command:
+<details>
+<summary>shadow fetch</summary>
 
 ```bash
-shadow clone <IPFS_CID>
+shadow fetch <contract_address> --etherscan-api-key <etherscan_api_key> --rpc-url <rpc_url>
 ```
 
-This will clone the contract group to a new directory in the current working directory with the shadowed contracts and metadata.
+This command fetches a shadow contract and its original compiler settings from Etherscan, and saves it to the current directory.
+
+#### Required Flags
+
+- `<contract_address>`: The address of the shadow contract you wish to fetch
+- `--etherscan-api-key <etherscan_api_key>`: Your Etherscan API key. Fetching may not work without this.
+- `--rpc-url <rpc_url>`: Your RPC URL. Fetching may not work without this.
+
+#### Optional Flags
+- `--root <path>`: The path to the directory in which to save the shadow contract [default: .]
+  - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
+- `--chain <chain>`: The chain on which the shadow contract is deployed
+- `--chain-id <chain_id>`: The chain ID on which the shadow contract is deployed
+- `--force`: Overwrite the shadow contract if it already exists
+</details>
+
+### Clone an Existing Contract Group
+
+<details>
+<summary>shadow clone</summary>
+
+```bash
+shadow clone <ipfs_cid> --etherscan-api-key <etherscan_api_key> --rpc-url <rpc_url>
+```
+
+This command clones an existing contract group from the Shadow Contract Registry and saves it to the current directory.
+
+#### Required Flags
+- `<ipfs_cid>`: The IPFS CID of the contract group you wish to clone
+- `--etherscan-api-key <etherscan_api_key>`: Your Etherscan API key. Cloning may not work without this.
+- `--rpc-url <rpc_url>`: Your RPC URL. Fetching may not work without this.
+
+#### Optional Flags
+- `--root <path>`: The path to the directory in which to save the shadow contract [default: .]
+  - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
+- `--chain <chain>`: The chain on which the shadow contract is deployed
+- `--chain-id <chain_id>`: The chain ID on which the shadow contract is deployed
+- `--force`: Overwrite the shadow contract if it already exists
+</details>
+
+### Compiling Your Shadow Contract
+
+<details>
+<summary>shadow compile</summary>
+
+```bash
+shadow compile --rpc-url <rpc_url>
+```
+
+This command compiles the shadow contract in the current directory. The compiled contract will be saved in the `/out` directory, next to the foundry artifact.
+
+_Note: The current working directory MUST contain the shadow contract you wish to compile. This is different from the other commands, which require the `--root` flag to specify the contract group directory._
+
+#### Required Flags
+- `--rpc-url <rpc_url>`: Your RPC URL. Compiling may not work without this.
+
+#### Optional Flags
+- `--root <path>`: The path to the directory containing the shadow contract [default: .]
+</details>
+
+### Testing Your Shadow Contract
+
+<details>
+<summary>shadow sim</summary>
+
+```bash
+shadow sim <transaction_hash> --rpc-url <rpc_url>
+```
+
+This command takes in a transaction hash and simulates the transaction using the contracts in your contract group. The simulation will output logs after the transaction has been executed.
+
+#### Required Flags
+- `<transaction_hash>`: The transaction hash of the transaction you wish to simulate
+- `--rpc-url <rpc_url>`: Your RPC URL. Simulating may not work without this.
+
+#### Optional Flags
+- `--root <path>`: The path to the directory containing the shadow contract group [default: .]
+</details>
+
+### Uploading Your Contract Group
+
+<details>
+<summary>shadow push</summary>
+
+```bash
+shadow push --rpc-url <rpc_url> --pinata-api-key <pinata_api_key> --pinata-secret-api-key <pinata_secret_api_key>
+```
+
+This command uploads the contract group in the current directory to the Shadow Contract Registry. The contract group will be pinned to IPFS using Pinata. You will also be prompted to broadcast an EAS attestation on Base in order to have your group appear on https://logs.xyz.
+
+#### Required Flags
+- `--rpc-url <rpc_url>`: Your RPC URL. Pushing may not work without this.
+- `--pinata-api-key <pinata_api_key>`: Your Pinata API key. Pushing may not work without this.
+- `--pinata-secret-api-key <pinata_secret_api_key>`: Your Pinata secret API key. Pushing may not work without this.
+
+#### Optional Flags
+- `--root <path>`: The path to the directory containing the shadow contract group [default: .]
+</details>
 
 ## Getting Help
 
