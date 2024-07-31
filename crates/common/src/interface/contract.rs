@@ -274,7 +274,7 @@ impl ShadowContractSource {
                 format!(
                     "{}{}={}",
                     r.name,
-                    if !r.name.to_string().ends_with("/") { "/" } else { "" },
+                    if !r.name.to_string().ends_with('/') { "/" } else { "" },
                     r.path.original().display()
                 )
             })
