@@ -41,7 +41,7 @@ pub async fn remote_version() -> Result<Version> {
         .danger_accept_invalid_certs(true)
         .build()?;
     let res = client
-        .get("https://api.github.com/repos/shadow-cli/shadow-hq/releases/latest")
+        .get("https://api.github.com/repos/shadow-hq/shadow-cli/releases/latest")
         .send()
         .await?;
     let release: Value = res.json().await?;
@@ -73,7 +73,7 @@ pub async fn remote_nightly_version() -> Result<Version> {
         .danger_accept_invalid_certs(true)
         .build()?;
     let res =
-        client.get("https://api.github.com/repos/shadow-cli/shadow-hq/commits/main").send().await?;
+        client.get("https://api.github.com/repos/shadow-hq/shadow-cli/commits/main").send().await?;
     let commit: Value = res.json().await?;
 
     // get the latest commit hash
