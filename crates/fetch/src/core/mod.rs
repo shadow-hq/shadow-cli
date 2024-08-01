@@ -1,7 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::FetchArgs;
-use alloy_chains::{Chain, ChainKind, NamedChain};
+use alloy_chains::{Chain, NamedChain};
 use eyre::{eyre, Result};
 use foundry_block_explorers::Client as EtherscanClient;
 use shadow_common::{

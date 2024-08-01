@@ -11,7 +11,9 @@ use alloy::{
 use eyre::{eyre, OptionExt, Result};
 use revm::EvmBuilder;
 use shadow_common::{
-    db::JsonRpcDatabase, env::ReplayBlockEnv, forge::ensure_forge_installed,
+    db::JsonRpcDatabase,
+    env::{get_chain_spec, ReplayBlockEnv},
+    forge::ensure_forge_installed,
     ShadowContractGroupInfo,
 };
 use tracing::{error, info, trace};
@@ -41,12 +43,17 @@ pub async fn simulate(args: SimulateArgs) -> Result<()> {
 
     // validate that the group is ready for pinning
     info!("validating shadow contract group at {}", root_dir.display());
-    group_info.validate().map_err(|e| eyre!("Failed to validate shadow contract group: {}", e))?;
     let artifact_path = group_info.prepare(&args.rpc_url).await?;
 
     // get a new provider
     let provider =
         ProviderBuilder::new().network::<AnyNetwork>().on_http(Url::parse(&args.rpc_url)?);
+
+    // get chain ID
+    let chain_id = provider
+        .get_chain_id()
+        .await
+        .map_err(|e| eyre::eyre!("failed to get chain ID from RPC: {}", e))?;
 
     info!("fetching transaction details for {}", tx_hash);
     let tx =
@@ -83,7 +90,11 @@ pub async fn simulate(args: SimulateArgs) -> Result<()> {
         partial_block_state_diff,
     )?;
     let env = build_sim_env(tx.from, tx.to, tx.value, tx.input.clone(), block_env.into());
-    let mut evm = EvmBuilder::default().with_env(env).with_db(db).build();
+    let mut evm = EvmBuilder::default()
+        .with_spec_id(get_chain_spec(&block_number, &chain_id))
+        .with_env(env)
+        .with_db(db)
+        .build();
 
     match evm.transact_preverified() {
         Ok(executed) => {
