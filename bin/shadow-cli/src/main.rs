@@ -34,53 +34,71 @@ async fn main() -> Result<()> {
         Subcommands::Init(subargs) => shadow_init::init(subargs).await?,
         Subcommands::Compile(mut subargs) => {
             if let Some(rpc_url) = config.rpc_url {
-                subargs.rpc_url = rpc_url;
+                if &subargs.rpc_url == "http://localhost:8545" {
+                    subargs.rpc_url = rpc_url;
+                }
             }
 
             shadow_compile::compile(subargs).await?
         }
         Subcommands::Simulate(mut subargs) => {
             if let Some(rpc_url) = config.rpc_url {
-                subargs.rpc_url = rpc_url;
+                if &subargs.rpc_url == "http://localhost:8545" {
+                    subargs.rpc_url = rpc_url;
+                }
             }
 
             shadow_simulate::simulate(subargs).await?
         }
         Subcommands::Fetch(mut subargs) => {
             if let Some(etherscan_api_key) = config.etherscan_api_key {
-                subargs.etherscan_api_key = Some(etherscan_api_key);
+                if subargs.etherscan_api_key.is_none() {
+                    subargs.etherscan_api_key = Some(etherscan_api_key);
+                }
             }
             if let Some(rpc_url) = config.rpc_url {
-                subargs.rpc_url = rpc_url;
+                if &subargs.rpc_url == "http://localhost:8545" {
+                    subargs.rpc_url = rpc_url;
+                }
             }
 
             shadow_etherscan_fetch::fetch(subargs).await?
         }
         Subcommands::Clone(mut subargs) => {
             if let Some(etherscan_api_key) = config.etherscan_api_key {
-                subargs.etherscan_api_key = Some(etherscan_api_key);
+                if subargs.etherscan_api_key.is_none() {
+                    subargs.etherscan_api_key = Some(etherscan_api_key);
+                }
             }
             if let Some(gateway_url) = config.ipfs_gateway_url {
                 subargs.ipfs_gateway_url = gateway_url;
             }
             if let Some(rpc_url) = config.rpc_url {
-                subargs.rpc_url = rpc_url;
+                if &subargs.rpc_url == "http://localhost:8545" {
+                    subargs.rpc_url = rpc_url;
+                }
             }
 
             shadow_clone::clone(subargs).await?
         }
         Subcommands::Push(mut subargs) => {
             if let Some(pinata_api_key) = config.pinata_api_key {
-                subargs.pinata_api_key = Some(pinata_api_key)
+                if subargs.pinata_api_key.is_none() {
+                    subargs.pinata_api_key = Some(pinata_api_key)
+                }
             }
             if let Some(pinata_secret_api_key) = config.pinata_secret_api_key {
-                subargs.pinata_secret_api_key = Some(pinata_secret_api_key)
+                if subargs.pinata_secret_api_key.is_none() {
+                    subargs.pinata_secret_api_key = Some(pinata_secret_api_key)
+                }
             }
             if let Some(gateway_url) = config.ipfs_gateway_url {
                 subargs.ipfs_gateway_url = gateway_url;
             }
             if let Some(rpc_url) = config.rpc_url {
-                subargs.rpc_url = rpc_url;
+                if &subargs.rpc_url == "http://localhost:8545" {
+                    subargs.rpc_url = rpc_url;
+                }
             }
 
             shadow_push::push(subargs).await?

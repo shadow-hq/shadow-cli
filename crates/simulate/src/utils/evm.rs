@@ -6,7 +6,7 @@ use alloy::{
 };
 use eyre::{OptionExt, Result};
 use hex::FromHex;
-use revm::primitives::{AnalysisKind, BlockEnv, Bytecode, Env, TxEnv, U256};
+use revm::primitives::{AnalysisKind, BlobExcessGasAndPrice, BlockEnv, Bytecode, Env, TxEnv, U256};
 use shadow_common::state::PartialBlockStateDiff;
 
 /// Builds the EVM environment for the deployment
@@ -32,7 +32,13 @@ pub(crate) fn build_sim_env(
             transact_to: revm::primitives::TxKind::Call(to.unwrap_or(from)),
             ..Default::default()
         },
-        block,
+        block: BlockEnv {
+            blob_excess_gas_and_price: Some(BlobExcessGasAndPrice {
+                excess_blob_gas: u64::MAX,
+                blob_gasprice: 1,
+            }),
+            ..block
+        },
     })
 }
 

@@ -1,3 +1,5 @@
+/// Blockscout API client
+pub mod blockscout;
 /// Shadow compilation utilities
 pub mod compiler;
 /// ephemeral db

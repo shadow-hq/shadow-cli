@@ -157,7 +157,7 @@ pub(crate) enum Subcommands {
     #[clap(
         name = "etherscan-source",
         alias = "fetch",
-        about = "Fetch a contract's source code and metadata from Etherscan."
+        about = "Fetch a contract's source code and metadata from Etherscan or Blockscout."
     )]
     Fetch(FetchArgs),
     #[clap(

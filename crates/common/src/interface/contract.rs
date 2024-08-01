@@ -46,7 +46,7 @@ impl ShadowContractInfo {
             address: creation_data.contract_address,
             contract_deployer: creation_data.contract_creator,
             name: metadata.items.first().expect("no metadata found").contract_name.clone(),
-            network: chain.named().expect("invalid chain").to_string(),
+            network: chain.named().map(|n| n.to_string()).unwrap_or_else(|| "unknown".to_string()),
             chain_id: chain.id(),
             source: "etherscan".to_string(),
             unique_events: 0,
