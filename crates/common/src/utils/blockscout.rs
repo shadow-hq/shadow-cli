@@ -128,8 +128,7 @@ impl Client {
                         .get("constructor_args")
                         .ok_or_eyre("no constructor_args")?
                         .as_str()
-                        .ok_or_eyre("invalid constructor_args")?
-                        .to_string(),
+                        .ok_or_eyre("invalid constructor_args")?,
                 )?,
                 evm_version: response
                     .get("evm_version")
