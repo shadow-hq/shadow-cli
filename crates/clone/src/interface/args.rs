@@ -31,4 +31,8 @@ pub struct CloneArgs {
     /// The RPC URL of the chain to simulate the transaction on.
     #[clap(short = 'u', long, default_value = "http://localhost:8545")]
     pub rpc_url: String,
+
+    /// The blockscan URL to use for fetching contract metadata
+    #[clap(short, long)]
+    pub blockscout_url: Option<String>,
 }

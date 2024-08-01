@@ -86,7 +86,7 @@ ContractGroup_01_01_2000_01_01
 shadow fetch <contract_address> --etherscan-api-key <etherscan_api_key> --rpc-url <rpc_url>
 ```
 
-This command fetches a shadow contract and its original compiler settings from Etherscan, and saves it to the current directory.
+This command fetches a shadow contract and its original compiler settings from Etherscan or Blockscout, and saves it to the current directory.
 
 #### Required Flags
 
@@ -98,6 +98,7 @@ This command fetches a shadow contract and its original compiler settings from E
 - `--root <path>`: The path to the directory in which to save the shadow contract [default: .]
   - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
 - `--force`: Overwrite the shadow contract if it already exists
+- `--blockscout-url`: If your chain uses Blockscout, you can specify the URL here. You do not need an Etherscan API key if you use this flag. For example, `--blockscout-url https://explorer.lyra.finance`
 </details>
 
 ### Clone an Existing Contract Group
@@ -120,6 +121,7 @@ This command clones an existing contract group from the Shadow Contract Registry
 - `--root <path>`: The path to the directory in which to save the shadow contract [default: .]
   - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
 - `--force`: Overwrite the shadow contract if it already exists
+- `--blockscout-url`: If your chain uses Blockscout, you can specify the URL here. You do not need an Etherscan API key if you use this flag. For example, `--blockscout-url https://explorer.lyra.finance`
 </details>
 
 ### Compiling Your Shadow Contract

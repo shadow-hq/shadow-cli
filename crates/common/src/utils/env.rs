@@ -37,6 +37,14 @@ impl<T> From<Block<T>> for ReplayBlockEnv {
     }
 }
 
+/// Given block height and chain id, get the [`SpecId`] at that block height
+pub fn get_chain_spec(h: &u64, chain_id: &u64) -> SpecId {
+    match chain_id {
+        1 => get_eth_chain_spec(h),
+        _ => SpecId::LATEST,
+    }
+}
+
 /// Given block height, get the [`SpecId`] at that block height
 pub fn get_eth_chain_spec(h: &u64) -> SpecId {
     // ranges taken from https://github.com/ethereum/execution-specs

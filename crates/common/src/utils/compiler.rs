@@ -1,6 +1,6 @@
 use crate::{
     db::JsonRpcDatabase,
-    env::{get_eth_chain_spec, ReplayBlockEnv},
+    env::{get_chain_spec, ReplayBlockEnv},
     ShadowContractInfo, ShadowContractSettings,
 };
 use alloy::{
@@ -12,7 +12,10 @@ use alloy::{
 use alloy_json_abi::JsonAbi;
 use eyre::{eyre, OptionExt, Result};
 use revm::{
-    primitives::{Address as RevmAddress, AnalysisKind, Bytes, Env, TxEnv, TxKind, U256},
+    primitives::{
+        Address as RevmAddress, AnalysisKind, BlobExcessGasAndPrice, BlockEnv, Bytes, Env, TxEnv,
+        TxKind, U256,
+    },
     EvmBuilder,
 };
 use serde::{Deserialize, Serialize};
@@ -20,6 +23,7 @@ use serde_json::Value;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
+    u64,
 };
 use tracing::{error, info};
 
@@ -62,6 +66,12 @@ pub async fn compile(
     // simulate the contract deployment w/ the original settings and deployer
     let provider = ProviderBuilder::new().network::<AnyNetwork>().on_http(Url::parse(rpc_url)?);
 
+    // get chain ID
+    let chain_id = provider
+        .get_chain_id()
+        .await
+        .map_err(|e| eyre::eyre!("failed to get chain ID from RPC: {}", e))?;
+
     info!("fetching transaction details for {}", metadata.deployment_transaction_hash);
     let tx = provider
         .get_transaction_by_hash(metadata.deployment_transaction_hash)
@@ -91,7 +101,7 @@ pub async fn compile(
     // execute the deployment transaction
     let mut evm = EvmBuilder::default()
         .with_db(db)
-        .with_spec_id(get_eth_chain_spec(&block_number))
+        .with_spec_id(get_chain_spec(&block_number, &chain_id))
         .with_env(deployment_env)
         .build();
     let output =
@@ -100,7 +110,7 @@ pub async fn compile(
     let compiler_output = CompilerOutput {
         abi: serde_json::from_value(contract_artifact["abi"].clone())?,
         method_identifiers: contract_artifact["methodIdentifiers"].clone(),
-        bytecode: output.result.into_output().ok_or_eyre("no bytecode")?,
+        bytecode: output.result.into_output().ok_or_eyre("failed to deploy contract")?,
     };
 
     // serialize and write the shadow artifact
@@ -209,6 +219,12 @@ fn build_deployment_env(
             transact_to: TxKind::Create,
             ..Default::default()
         },
-        block: replay_block_env.into(),
+        block: BlockEnv {
+            blob_excess_gas_and_price: Some(BlobExcessGasAndPrice {
+                excess_blob_gas: u64::MAX,
+                blob_gasprice: 1,
+            }),
+            ..replay_block_env.into()
+        },
     })
 }

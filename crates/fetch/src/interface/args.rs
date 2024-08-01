@@ -3,12 +3,12 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
     transports::http::reqwest::Url,
 };
-use alloy_chains::{Chain, NamedChain};
+use alloy_chains::Chain;
 use clap::Parser;
 
 /// Arguments for the `fetch` subcommand
 #[derive(Debug, Clone, Parser)]
-#[clap(about = "Fetch a contract's source code and metadata from Etherscan.")]
+#[clap(about = "Fetch a contract's source code and metadata from Etherscan or Blockscout.")]
 pub struct FetchArgs {
     /// The address of the contract to fetch
     pub address: String,
@@ -28,6 +28,10 @@ pub struct FetchArgs {
     /// The RPC URL of the chain to simulate the transaction on.
     #[clap(short = 'u', long, default_value = "http://localhost:8545")]
     pub rpc_url: String,
+
+    /// The blockscan URL to use for fetching contract metadata
+    #[clap(short, long)]
+    pub blockscout_url: Option<String>,
 }
 
 impl FetchArgs {
@@ -41,6 +45,6 @@ impl FetchArgs {
             .await
             .map_err(|e| eyre::eyre!("failed to get chain ID from RPC: {}", e))?;
 
-        Ok(Chain::from_named(NamedChain::try_from(chain_id)?))
+        Ok(Chain::from_id_unchecked(chain_id))
     }
 }

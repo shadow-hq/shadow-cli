@@ -2,15 +2,15 @@ use std::{path::PathBuf, str::FromStr};
 
 use crate::FetchArgs;
 use eyre::{eyre, Result};
-use foundry_block_explorers::Client;
+use foundry_block_explorers::Client as EtherscanClient;
 use shadow_common::{
-    compiler, forge::ensure_forge_installed, ShadowContractGroupInfo, ShadowContractInfo,
-    ShadowContractSettings, ShadowContractSource,
+    blockscout::Client as BlockscoutClient, compiler, forge::ensure_forge_installed,
+    ShadowContractGroupInfo, ShadowContractInfo, ShadowContractSettings, ShadowContractSource,
 };
 use tracing::{error, info, trace, warn};
 
-/// The `fetch` subcommand. Fetches a contract's source code and metadata from Etherscan, and
-/// saves it locally.
+/// The `fetch` subcommand. Fetches a contract's source code and metadata from Etherscan or
+/// Blockscout, and saves it locally.
 pub async fn fetch(args: FetchArgs) -> Result<()> {
     // ensure forge is installed on the system
     ensure_forge_installed()?;
@@ -44,10 +44,21 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     }
 
     // fetch contract metadata and creation data
-    let client = Client::new(chain, args.etherscan_api_key.unwrap_or_default())?;
     let address = args.address.parse().map_err(|_| eyre!("Invalid address: {}", args.address))?;
-    let metadata = client.contract_source_code(address).await?;
-    let creation_data = client.contract_creation_data(address).await?;
+    let (metadata, creation_data) = if let Some(blockscout_url) = args.blockscout_url {
+        let client = BlockscoutClient::new(&blockscout_url);
+        let metadata = client.contract_source_code(address).await?;
+        let creation_data = client.contract_creation_data(address).await?;
+
+        (metadata, creation_data)
+    } else {
+        let client = EtherscanClient::new(chain, args.etherscan_api_key.unwrap_or_default())?;
+        let metadata = client.contract_source_code(address).await?;
+        let creation_data = client.contract_creation_data(address).await?;
+
+        (metadata, creation_data)
+    };
+
     let info = ShadowContractInfo::new(&chain, &metadata, &creation_data);
     let source = ShadowContractSource::new(&metadata)?;
     let settings = ShadowContractSettings::new(&metadata);
