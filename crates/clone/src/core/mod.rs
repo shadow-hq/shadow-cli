@@ -1,21 +1,17 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::{ipfs::read_from_ipfs, CloneArgs};
-use alloy_chains::Chain;
 use eyre::Result;
 use shadow_common::{forge::ensure_forge_installed, ShadowContractGroupInfo, ShadowContractSource};
 use shadow_etherscan_fetch::FetchArgs;
 
-use tracing::{debug, info, trace};
+use tracing::{debug, info};
 
 /// The `clone` subcommand. Clones a shadow contract group from IPFS and saves it to the local
 /// filesystem
 pub async fn clone(args: CloneArgs) -> Result<()> {
     // ensure forge is installed on the system
     ensure_forge_installed()?;
-
-    let chain: Chain = args.clone().try_into()?;
-    trace!("using chain: {} ({})", chain, chain.id());
 
     // get the contract group's metadata from IPFS
     info!("fetching contract group metadata from IPFS...");
@@ -32,8 +28,6 @@ pub async fn clone(args: CloneArgs) -> Result<()> {
         shadow_etherscan_fetch::fetch(FetchArgs {
             address: contract.address.to_string(),
             etherscan_api_key: args.etherscan_api_key.clone(),
-            chain: args.chain.clone(),
-            chain_id: args.chain_id,
             root: root.to_string_lossy().to_string(),
             force: args.force,
             rpc_url: args.rpc_url.clone(),
