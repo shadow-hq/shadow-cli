@@ -54,12 +54,14 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
         let client = BlockscoutClient::new(&blockscout_url);
         let metadata = client.contract_source_code(address).await?;
         let creation_data = client.contract_creation_data(address).await?;
+        info!("successfully fetched contract information from blockscout");
 
         (metadata, creation_data)
     } else {
         let client = EtherscanClient::new(chain, args.etherscan_api_key.unwrap_or_default())?;
         let metadata = client.contract_source_code(address).await?;
         let creation_data = client.contract_creation_data(address).await?;
+        info!("successfully fetched contract information from etherscan");
 
         (metadata, creation_data)
     };
@@ -68,7 +70,6 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     let source = ShadowContractSource::new(&metadata)?;
     let settings = ShadowContractSettings::new(&metadata);
 
-    info!("successfully fetched contract information from etherscan");
     info!("writing contract to {}", output_dir.display());
 
     // initialize foundry project structure
