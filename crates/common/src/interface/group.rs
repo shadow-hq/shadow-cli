@@ -1,12 +1,15 @@
-use std::path::{Path, PathBuf};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use alloy::primitives::Address;
 use chrono::{DateTime, Utc};
-use eyre::{eyre, Result};
+use eyre::{OptionExt, Result};
 use futures::future::try_join_all;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 use crate::{compiler, ShadowContractInfo, ShadowContractSettings, ShadowContractSource};
 
@@ -185,18 +188,25 @@ impl ShadowContractGroupInfo {
     }
 
     /// Validates that the group information is ready for pinning to IPFS
-    pub fn validate(&self) -> Result<()> {
+    pub fn validate(&mut self) -> Result<()> {
         // group must have a display name
         if &self.display_name == "Unnamed Contract Group" {
-            error!("This is an unnamed contract group. You must name the group in {}/info.json before pushing.", self.root.display());
-            return Err(eyre!("contract group name is not set"));
+            let display_name = prompt("Enter a display name for this contract group: ")?
+                .ok_or_eyre("no display name provided")?;
+            self.display_name = display_name
         }
 
         // creator must exist
         if self.creator.is_none() {
-            error!("This contract group has no creator. You must add a creator address in {}/info.json before pushing.", self.root.display());
-            return Err(eyre!("no creator set"));
+            let creator = prompt("Enter the creator address of this contract group: ")?
+                .ok_or_eyre("no creator address provided")?;
+            self.creator = Some(creator.parse()?);
         }
+
+        // update info.json
+        let info_file = self.root.join("info.json");
+        let info_json = serde_json::to_string_pretty(self)?;
+        std::fs::write(info_file, info_json)?;
 
         Ok(())
     }
@@ -230,4 +240,27 @@ impl ShadowContractGroupInfo {
 
         Ok(out_folder)
     }
+}
+
+/// Prompt the user for input w/ pretty colors :D
+fn prompt(text: &str) -> Result<Option<String>> {
+    let mut input = String::new();
+    const YELLOW_ANSI_CODE: &str = "\u{001b}[33m";
+    const LIGHT_GRAY_ANSI_CODE: &str = "\u{001b}[90m";
+    const RESET_ANSI_CODE: &str = "\u{001b}[0m";
+
+    print!(
+        "{LIGHT_GRAY_ANSI_CODE}{}  {YELLOW_ANSI_CODE}WARN{RESET_ANSI_CODE} {}",
+        // include microsecond precision
+        chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+        text,
+    );
+
+    std::io::stdout().flush().unwrap();
+    std::io::stdin().read_line(&mut input)?;
+    if !input.trim().is_empty() {
+        return Ok(Some(input.trim().to_string()));
+    }
+
+    Ok(None)
 }
