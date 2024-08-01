@@ -97,8 +97,6 @@ This command fetches a shadow contract and its original compiler settings from E
 #### Optional Flags
 - `--root <path>`: The path to the directory in which to save the shadow contract [default: .]
   - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
-- `--chain <chain>`: The chain on which the shadow contract is deployed
-- `--chain-id <chain_id>`: The chain ID on which the shadow contract is deployed
 - `--force`: Overwrite the shadow contract if it already exists
 </details>
 
@@ -121,8 +119,6 @@ This command clones an existing contract group from the Shadow Contract Registry
 #### Optional Flags
 - `--root <path>`: The path to the directory in which to save the shadow contract [default: .]
   - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
-- `--chain <chain>`: The chain on which the shadow contract is deployed
-- `--chain-id <chain_id>`: The chain ID on which the shadow contract is deployed
 - `--force`: Overwrite the shadow contract if it already exists
 </details>
 

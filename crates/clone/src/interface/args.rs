@@ -1,8 +1,4 @@
-use std::str::FromStr;
-
-use alloy_chains::{Chain, NamedChain};
 use clap::Parser;
-use eyre::{eyre, Result};
 
 /// Arguments for the `clone` subcommand
 #[derive(Debug, Clone, Parser)]
@@ -14,14 +10,6 @@ pub struct CloneArgs {
     /// The API key to use for Etherscan.
     #[clap(short, long, required = false)]
     pub etherscan_api_key: Option<String>,
-
-    /// Chain to fetch the contract from. Defaults to `ethereum`.
-    #[clap(short, long, required = false)]
-    pub chain: Option<String>,
-
-    /// Chain ID to fetch the contract from. Defaults to `1`.
-    #[clap(short = 'i', long, required = false)]
-    pub chain_id: Option<u64>,
 
     /// The path to the directory or contract group in which to save the fetched contract.
     #[clap(short, long, default_value = ".", required = false)]
@@ -43,19 +31,4 @@ pub struct CloneArgs {
     /// The RPC URL of the chain to simulate the transaction on.
     #[clap(short = 'u', long, default_value = "http://localhost:8545")]
     pub rpc_url: String,
-}
-
-impl TryFrom<CloneArgs> for Chain {
-    type Error = eyre::Error;
-
-    fn try_from(args: CloneArgs) -> Result<Self> {
-        let chain = match (args.chain, args.chain_id) {
-            (Some(chain), _) => Chain::from_named(
-                NamedChain::from_str(&chain).map_err(|_| eyre!("Invalid chain name: {}", chain))?,
-            ),
-            (None, Some(chain_id)) => Chain::from_id(chain_id),
-            (None, None) => Chain::mainnet(),
-        };
-        Ok(chain)
-    }
 }

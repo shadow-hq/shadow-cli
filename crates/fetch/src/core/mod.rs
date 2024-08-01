@@ -1,7 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::FetchArgs;
-use alloy_chains::Chain;
 use eyre::{eyre, Result};
 use foundry_block_explorers::Client;
 use shadow_common::{
@@ -16,8 +15,8 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     // ensure forge is installed on the system
     ensure_forge_installed()?;
 
-    let chain: Chain = args.clone().try_into()?;
-    trace!("using chain: {} ({})", chain, chain.id());
+    let chain = args.try_get_chain().await?;
+    trace!("using chain {}", chain);
 
     // check if this is part of a shadow contract group
     let mut output_dir = PathBuf::from_str(&args.root)?;

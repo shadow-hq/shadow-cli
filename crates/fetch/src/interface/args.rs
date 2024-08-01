@@ -1,8 +1,10 @@
-use std::str::FromStr;
-
+use alloy::{
+    network::AnyNetwork,
+    providers::{Provider, ProviderBuilder},
+    transports::http::reqwest::Url,
+};
 use alloy_chains::{Chain, NamedChain};
 use clap::Parser;
-use eyre::{eyre, Result};
 
 /// Arguments for the `fetch` subcommand
 #[derive(Debug, Clone, Parser)]
@@ -14,14 +16,6 @@ pub struct FetchArgs {
     /// The API key to use for Etherscan.
     #[clap(short, long, required = false)]
     pub etherscan_api_key: Option<String>,
-
-    /// Chain to fetch the contract from. Defaults to `ethereum`.
-    #[clap(short, long, required = false)]
-    pub chain: Option<String>,
-
-    /// Chain ID to fetch the contract from. Defaults to `1`.
-    #[clap(short = 'i', long, required = false)]
-    pub chain_id: Option<u64>,
 
     /// The path to the directory or contract group in which to save the fetched contract.
     #[clap(short, long, default_value = ".", required = false)]
@@ -36,17 +30,17 @@ pub struct FetchArgs {
     pub rpc_url: String,
 }
 
-impl TryFrom<FetchArgs> for Chain {
-    type Error = eyre::Error;
+impl FetchArgs {
+    /// Try to get the chain ID from the RPC URL
+    pub async fn try_get_chain(&self) -> eyre::Result<Chain> {
+        let provider =
+            ProviderBuilder::new().network::<AnyNetwork>().on_http(Url::parse(&self.rpc_url)?);
 
-    fn try_from(args: FetchArgs) -> Result<Self> {
-        let chain = match (args.chain, args.chain_id) {
-            (Some(chain), _) => Chain::from_named(
-                NamedChain::from_str(&chain).map_err(|_| eyre!("Invalid chain name: {}", chain))?,
-            ),
-            (None, Some(chain_id)) => Chain::from_id(chain_id),
-            (None, None) => Chain::mainnet(),
-        };
-        Ok(chain)
+        let chain_id = provider
+            .get_chain_id()
+            .await
+            .map_err(|e| eyre::eyre!("failed to get chain ID from RPC: {}", e))?;
+
+        Ok(Chain::from_named(NamedChain::try_from(chain_id)?))
     }
 }
