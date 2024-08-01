@@ -1,6 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
 use crate::FetchArgs;
+use alloy_chains::{Chain, ChainKind, NamedChain};
 use eyre::{eyre, Result};
 use foundry_block_explorers::Client as EtherscanClient;
 use shadow_common::{
@@ -15,7 +16,11 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
     // ensure forge is installed on the system
     ensure_forge_installed()?;
 
-    let chain = args.try_get_chain().await?;
+    let raw_chain = args.try_get_chain().await?;
+    let chain = match NamedChain::try_from(raw_chain) {
+        Ok(named) => Chain::from_named(named),
+        Err(_) => raw_chain,
+    };
     trace!("using chain {}", chain);
 
     // check if this is part of a shadow contract group
