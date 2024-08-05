@@ -376,7 +376,7 @@ impl ShadowContractSettings {
                     ]
                 }
             }),
-            libraries: metadata.settings().map(|s| s.libraries.clone()).unwrap_or_default(),
+            libraries: metadata.settings().map(|s| s.libraries).unwrap_or_default(),
             compiler_version: metadata.compiler_version.clone(),
             constructor_arguments: metadata.constructor_arguments.to_vec(),
             evm_version: metadata.evm_version().ok().flatten().unwrap_or_default().to_string(),
