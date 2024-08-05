@@ -4,7 +4,7 @@ use alloy::primitives::Address;
 use alloy_chains::Chain;
 use eyre::Result;
 use foundry_block_explorers::contract::{ContractCreationData, ContractMetadata};
-use foundry_compilers::artifacts::{RelativeRemapping, Remapping};
+use foundry_compilers::artifacts::{Libraries, RelativeRemapping, Remapping};
 use revm::primitives::B256;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -330,7 +330,7 @@ pub struct ShadowContractSettings {
     #[serde(rename = "outputSelection")]
     pub output_selection: Value,
     /// The libraries used by the contract
-    pub libraries: Value,
+    pub libraries: Libraries,
     /// The compiler version used to compile the contract
     #[serde(rename = "compilerVersion")]
     pub compiler_version: String,
@@ -376,7 +376,7 @@ impl ShadowContractSettings {
                     ]
                 }
             }),
-            libraries: serde_json::json!({}),
+            libraries: metadata.settings().map(|s| s.libraries).unwrap_or_default(),
             compiler_version: metadata.compiler_version.clone(),
             constructor_arguments: metadata.constructor_arguments.to_vec(),
             evm_version: metadata.evm_version().ok().flatten().unwrap_or_default().to_string(),
@@ -389,12 +389,28 @@ impl ShadowContractSettings {
     pub fn generate_config(&self, src_root: &Path) -> Result<()> {
         let config_path = src_root.join("foundry.toml");
         let config = format!(
-            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"\nevm_version = \"{}\"\nvia_ir = {}",
+            "[profile.default]\nsrc = \"src\"\nout = \"out\"\nlibs = [\"lib\"]\noptimizer = {}\noptimizer_runs = {}\nbytecode_hash = \"none\"\nsolc_version = \"{}\"\nevm_version = \"{}\"\nvia_ir = {}\nlibraries = {:#?}",
             self.optimizer.enabled,
             self.optimizer.runs,
             self.compiler_version.strip_prefix('v').unwrap_or(&self.compiler_version),
             self.evm_version,
-            self.via_ir
+            self.via_ir,
+            self.libraries
+                .clone()
+                .with_stripped_file_prefixes(src_root)
+                .libs
+                .iter()
+                .flat_map(|(path_to_lib, info)| {
+                    info.iter().map(move |(lib_name, address)| {
+                        format!(
+                            "{}:{}:{}",
+                            path_to_lib.to_str().unwrap(),
+                            lib_name,
+                            address
+                        )
+                    })
+                })
+                .collect::<Vec<String>>()
         );
 
         // overwrite `foundry.toml` if it already exists
