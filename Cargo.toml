@@ -146,8 +146,10 @@ tempdir = "0.3.7"
 alloy-chains = "0.1.23"
 walkdir = "2.5.0"
 strsim = "0.11.1"
-alloy-json-abi = { version = "0.7.6", features = ["serde_json"]}
-foundry-block-explorers = { version = "0.5.1", features = ["foundry-compilers"] }
+alloy-json-abi = { version = "0.7.6", features = ["serde_json"] }
+foundry-block-explorers = { version = "0.5.1", features = [
+    "foundry-compilers",
+] }
 foundry-compilers = { version = "0.10.0", default-features = false }
 
 foundry-evm = { git = "https://github.com/foundry-rs/foundry" }
@@ -157,8 +159,8 @@ revm = { git = "https://github.com/bluealloy/revm", tag = "v40", default-feature
     "std",
     "serde-json",
     "c-kzg",
-    "blst"
-]  }
+    "blst",
+] }
 ethers-solc = "2.0.14"
 toml = "0.8.15"
 rayon = "1.10.0"

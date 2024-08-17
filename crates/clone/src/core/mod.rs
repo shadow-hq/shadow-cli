@@ -32,6 +32,7 @@ pub async fn clone(args: CloneArgs) -> Result<()> {
             force: args.force,
             rpc_url: args.rpc_url.clone(),
             blockscout_url: args.blockscout_url.clone(),
+            reth: args.reth,
         })
         .await?;
 

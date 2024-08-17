@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
 use crate::FetchArgs;
 use alloy_chains::{Chain, NamedChain};
@@ -112,7 +112,25 @@ pub async fn fetch(args: FetchArgs) -> Result<()> {
         group_info.update_contracts()?;
     }
 
-    compiler::compile(&args.rpc_url, &output_dir, &settings, &info).await?;
+    let compiler_output = compiler::compile(&args.rpc_url, &output_dir, &settings, &info).await?;
+
+    if args.reth {
+        // check for `shadow.json` in the root directory and load it if it exists.
+        let mut reth_config = match std::fs::read_to_string("shadow.json") {
+            Ok(contents) => {
+                serde_json::from_str::<HashMap<String, String>>(&contents).unwrap_or_default()
+            }
+            Err(_) => HashMap::new(),
+        };
+
+        // update the reth config with the new contract
+        reth_config.insert(args.address, format!("0x{}", hex::encode(&compiler_output.bytecode)));
+
+        // write the updated reth config to `shadow.json`
+        let reth_config_json = serde_json::to_string_pretty(&reth_config)?;
+        std::fs::write("shadow.json", reth_config_json)?;
+        info!("updated shadow-reth configuration");
+    }
 
     Ok(())
 }

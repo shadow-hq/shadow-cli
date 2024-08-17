@@ -11,4 +11,8 @@ pub struct CompileArgs {
     /// The RPC URL of the chain to simulate the transaction on.
     #[clap(short = 'u', long, default_value = "http://localhost:8545")]
     pub rpc_url: String,
+
+    /// Whether to save the compiled contract to './shadow.json' for use with shadow-reth.
+    #[clap(long)]
+    pub reth: bool,
 }
