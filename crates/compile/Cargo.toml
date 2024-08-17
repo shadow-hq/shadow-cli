@@ -28,3 +28,4 @@ foundry-block-explorers.workspace = true
 alloy.workspace = true
 alloy-chains.workspace = true
 shadow-common.workspace = true
+hex.workspace = true

@@ -35,4 +35,8 @@ pub struct CloneArgs {
     /// The blockscan URL to use for fetching contract metadata
     #[clap(short, long)]
     pub blockscout_url: Option<String>,
+
+    /// Whether to save the compiled contract to '{root}/shadow.json' for use with shadow-reth.
+    #[clap(long)]
+    pub reth: bool,
 }
