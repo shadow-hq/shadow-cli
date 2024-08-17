@@ -19,7 +19,7 @@ resolver = "2"
 
 [workspace.package]
 description = "???"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 homepage = "https://logs.xyz"
 repository = "https://github.com/shadow-hq/shadow-cli"
