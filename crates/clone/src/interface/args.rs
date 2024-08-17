@@ -36,7 +36,7 @@ pub struct CloneArgs {
     #[clap(short, long)]
     pub blockscout_url: Option<String>,
 
-    /// Whether to save the compiled contract to '{root}/shadow.json' for use with shadow-reth.
+    /// Whether to save the compiled contract to './shadow.json' for use with shadow-reth.
     #[clap(long)]
     pub reth: bool,
 }

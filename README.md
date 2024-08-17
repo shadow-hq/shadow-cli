@@ -99,6 +99,7 @@ This command fetches a shadow contract and its original compiler settings from E
   - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
 - `--force`: Overwrite the shadow contract if it already exists
 - `--blockscout-url`: If your chain uses Blockscout, you can specify the URL here. You do not need an Etherscan API key if you use this flag. For example, `--blockscout-url https://explorer.lyra.finance`
+- `--reth`: Whether to save the compiled contract bytecode to './shadow.json' for use with shadow-reth. See [shadow-reth](https://github.com/shadow-hq/shadow-reth) for more information.
 </details>
 
 ### Clone an Existing Contract Group
@@ -122,6 +123,7 @@ This command clones an existing contract group from the Shadow Contract Registry
   - *If you wish to save the contract to a contract group, you must either be in the contract group's directory or specify the contract group's directory with the `--root` flag.*
 - `--force`: Overwrite the shadow contract if it already exists
 - `--blockscout-url`: If your chain uses Blockscout, you can specify the URL here. You do not need an Etherscan API key if you use this flag. For example, `--blockscout-url https://explorer.lyra.finance`
+- `--reth`: Whether to save the compiled contract bytecode to './shadow.json' for use with shadow-reth. See [shadow-reth](https://github.com/shadow-hq/shadow-reth) for more information.
 </details>
 
 ### Compiling Your Shadow Contract
@@ -142,6 +144,7 @@ _Note: The current working directory MUST contain the shadow contract you wish t
 
 #### Optional Flags
 - `--root <path>`: The path to the directory containing the shadow contract [default: .]
+- `--reth`: Whether to save the compiled contract bytecode to './shadow.json' for use with shadow-reth. See [shadow-reth](https://github.com/shadow-hq/shadow-reth) for more information.
 </details>
 
 ### Testing Your Shadow Contract
