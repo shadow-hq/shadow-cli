@@ -6018,7 +6018,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-cli"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "clap",
  "envy",
@@ -6040,7 +6040,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-clone"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6063,7 +6063,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-common"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6095,7 +6095,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-compile"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6116,7 +6116,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-config"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "clap",
  "envy",
@@ -6129,7 +6129,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-etherscan-fetch"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6150,7 +6150,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-init"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6170,7 +6170,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-push"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6193,7 +6193,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-simulate"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "alloy",
  "alloy-chains",
@@ -6218,7 +6218,7 @@ dependencies = [
 
 [[package]]
 name = "shadow-tracing"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "clap",
  "eyre",

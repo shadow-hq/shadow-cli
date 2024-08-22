@@ -19,7 +19,7 @@ resolver = "2"
 
 [workspace.package]
 description = "???"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 homepage = "https://logs.xyz"
 repository = "https://github.com/shadow-hq/shadow-cli"
@@ -48,8 +48,6 @@ incremental = false
 rust.missing_debug_implementations = "warn"
 rust.missing_docs = "warn"
 rust.unreachable_pub = "warn"
-rust.unused_must_use = "deny"
-rust.rust_2018_idioms = "deny"
 rustdoc.all = "warn"
 
 [workspace.lints.clippy]
