@@ -5,7 +5,7 @@ use std::{
 
 use alloy::primitives::Address;
 use chrono::{DateTime, Utc};
-use eyre::{OptionExt, Result};
+use eyre::{bail, OptionExt, Result};
 use futures::future::try_join_all;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
@@ -201,6 +201,19 @@ impl ShadowContractGroupInfo {
             let creator = prompt("Enter the creator address of this contract group: ")?
                 .ok_or_eyre("no creator address provided")?;
             self.creator = Some(creator.parse()?);
+        }
+
+        // if readme is unchanged, prompt user to update it
+        let readme_file = self.root.join("README.md");
+        let readme = std::fs::read_to_string(&readme_file)?;
+        if readme == DEFAULT_README {
+            let skip_readme = prompt("You have not updated the README.md file for your contract group. Would you like to skip this step? (y/N)")?
+                .unwrap_or("n".to_string())
+                .to_lowercase();
+
+            if skip_readme != "y" {
+                bail!("Please update the README.md file for your contract group");
+            }
         }
 
         // update info.json
