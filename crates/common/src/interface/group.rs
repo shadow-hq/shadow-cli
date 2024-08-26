@@ -205,10 +205,10 @@ impl ShadowContractGroupInfo {
 
         // if readme is unchanged, prompt user to update it
         let readme_file = self.root.join("README.md");
-        let readme = std::fs::read_to_string(&readme_file)?;
+        let readme = std::fs::read_to_string(readme_file)?;
         if readme == DEFAULT_README {
             let skip_readme = prompt("You have not updated the README.md file for your contract group. Would you like to skip this step? (y/N)")?
-                .unwrap_or("n".to_string())
+                .unwrap_or_else(|| "n".to_string())
                 .to_lowercase();
 
             if skip_readme != "y" {
